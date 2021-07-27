@@ -1,0 +1,26 @@
+[package]
+name = "mr-tagger"
+version = "0.1.0"
+description = "Spotlight alternative"
+default-run = "mr-tagger"
+edition = "2018"
+build = "src/build.rs"
+
+[build-dependencies]
+tauri-build = { version = "1.0.0-beta.3" }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+# tauri = { git = "https://github.com/tauri-apps/tauri", rev = "70a1941",features = ["dialog-open", "dialog-save", "menu", "shell-open"] }
+tauri = { version = "1.0.0-beta.5", features = ["dialog-open", "dialog-save", "menu", "shell-open"] }
+
+[features]
+default = [ "custom-protocol" ]
+custom-protocol = [ "tauri/custom-protocol" ]
+
+[profile.dev]
+# speeds up incremental builds a lot. Should be default in a new Rust
+# version: https://github.com/rust-lang/cargo/pull/9298
+# https://jakedeichert.com/blog/reducing-rust-incremental-compilation-times-on-macos-by-70-percent/
+split-debuginfo = "unpacked"
