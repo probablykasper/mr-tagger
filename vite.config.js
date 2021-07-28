@@ -8,7 +8,7 @@ export default defineConfig({
   publicDir: '../public',
   clearScreen: false,
   server: {
-    port: 4000,
+    port: 8000,
     strictPort: true,
   },
   build: {

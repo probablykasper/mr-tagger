@@ -7,6 +7,13 @@ use tauri::{api, CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowU
 
 mod cmd;
 
+#[macro_export]
+macro_rules! throw {
+  ($($arg:tt)*) => {{
+    return Err(format!($($arg)*))
+  }};
+}
+
 fn main() {
   fn custom_menu(name: &str) -> CustomMenuItem {
     let c = CustomMenuItem::new(name.to_string(), name);
@@ -15,9 +22,9 @@ fn main() {
   let menu = Menu::new()
     .add_submenu(Submenu::new(
       // on macOS first menu is always app name
-      "Kryp",
+      "Mr Tagger",
       Menu::new()
-        .add_native_item(MenuItem::About("Kryp".to_string()))
+        .add_native_item(MenuItem::About("Mr Tagger".to_string()))
         .add_native_item(MenuItem::Separator)
         .add_native_item(MenuItem::Services)
         .add_native_item(MenuItem::Separator)
@@ -76,7 +83,11 @@ fn main() {
 
   let ctx = tauri::generate_context!();
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![cmd::example])
+    .invoke_handler(tauri::generate_handler![
+      cmd::open,
+      cmd::open_dialog,
+      cmd::error_popup
+    ])
     .create_window("main", WindowUrl::default(), |win, webview| {
       let win = win
         .title("Mr Tagger")
@@ -90,6 +101,7 @@ fn main() {
         .fullscreen(false);
       return (win, webview);
     })
+    .manage(cmd::Data(Default::default()))
     .menu(menu)
     .on_menu_event(|event| match event.menu_item_id() {
       "learn-more" => {

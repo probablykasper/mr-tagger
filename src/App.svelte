@@ -1,17 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import Counter from './Counter.svelte'
-  let count: number = 0
-  onMount(() => {
-    const interval = setInterval(() => count++, 1000)
-    return () => clearInterval(interval)
-  })
+  import { invoke } from '@tauri-apps/api'
+  import { popup } from './scripts/helpers'
+  import ItemView from './components/Item.svelte'
+  import type { Item } from './components/Item.svelte'
+  let item: Item | null = null
+  async function open() {
+    item = (await invoke('open_dialog').catch(popup)) as any
+  }
 </script>
 
 <main>
-  <h1>Hello world</h1>
-  <p>Edit <code>src/Counter.svelte</code> to trigger HMR</p>
-  <Counter {count} />
+  {#if item}
+    <ItemView {item} />
+  {:else}
+    <h1>Mr Tagger</h1>
+    <button on:click={open}>Open</button>
+  {/if}
 </main>
 
 <style lang="sass">
@@ -19,14 +23,12 @@
     margin: 0
     font-family: Arial, Helvetica, sans-serif
     font-size: 18px
+    background-color: #191B20
   main
-    text-align: center
-    min-height: 100vh
     display: flex
     flex-direction: column
     justify-content: center
-    code
-      background: #e6e6e6
-      padding: 3px 6px
-      border-radius: 4px
+    align-items: center
+    color: #e6e6e6
+    min-height: 100vh
 </style>
