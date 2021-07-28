@@ -1,17 +1,10 @@
+use crate::frames::{get_frames, Frame, Metadata};
+use crate::throw;
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::api::dialog;
 use tauri::{command, State};
-
-use crate::throw;
-
-#[derive(Debug, Clone)]
-enum Metadata {
-  Id3(id3::Tag),
-  M4a(mp4ameta::Tag),
-}
-use Metadata::{Id3, M4a};
 
 #[derive(Debug, Clone)]
 pub struct Item {
@@ -33,6 +26,12 @@ pub fn error_popup(msg: String) {
   dialog::message("Error", msg);
 }
 
+#[derive(Serialize)]
+pub struct Info {
+  path: PathBuf,
+  frames: Vec<Frame>,
+}
+
 #[command]
 // pub async fn open(path: PathBuf, app: State<'_, Data>, win: Window) -> Result<(), String> {
 pub async fn open_dialog(app: State<'_, Data>) -> Result<Option<Info>, String> {
@@ -46,12 +45,6 @@ pub async fn open_dialog(app: State<'_, Data>) -> Result<Option<Info>, String> {
   return open(path, app).await;
 }
 
-#[derive(Serialize)]
-pub struct Info {
-  path: PathBuf,
-  title: String,
-}
-
 #[command]
 pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, String> {
   let mut app = app.0.lock().unwrap();
@@ -62,6 +55,9 @@ pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, S
         Ok(tag) => tag,
         Err(_) => id3::Tag::new(),
       };
+      for frame in tag.frames() {
+        println!("MP3 FRAME {:?}", frame);
+      }
       Metadata::Id3(tag)
     }
     "m4a" | "mp4" | "m4p" | "m4b" | "m4r" | "m4v" => {
@@ -69,7 +65,10 @@ pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, S
         Ok(tag) => tag,
         Err(_) => throw!("No tags found"),
       };
-      Metadata::M4a(tag)
+      for (ident, data) in tag.data() {
+        println!("M4A FRAME {:?}, {:?}", ident, data);
+      }
+      Metadata::Mp4(tag)
     }
     _ => throw!("Unsupported file type"),
   };
@@ -79,10 +78,7 @@ pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, S
   });
   let info = Info {
     path: path,
-    title: match metadata {
-      Id3(tag) => tag.title().unwrap_or_default().to_string(),
-      M4a(tag) => tag.title().unwrap_or_default().to_string(),
-    },
+    frames: get_frames(&metadata),
   };
   Ok(Some(info))
 }

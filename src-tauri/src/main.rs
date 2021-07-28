@@ -6,6 +6,7 @@
 use tauri::{api, CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
 
 mod cmd;
+mod frames;
 
 #[macro_export]
 macro_rules! throw {
