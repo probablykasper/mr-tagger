@@ -3,6 +3,7 @@ use crate::throw;
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use tauri::api::dialog;
 use tauri::{command, State};
 
@@ -21,28 +22,17 @@ pub struct App {
 pub struct Data(pub Arc<Mutex<App>>);
 
 #[command]
-pub fn error_popup(msg: String) {
+pub fn error_popup(msg: String, win: tauri::Window) {
   println!("Error popup: {}", msg);
-  dialog::message("Error", msg);
+  thread::spawn(move || {
+    dialog::message(Some(&win), "Error", msg);
+  });
 }
 
 #[derive(Serialize)]
 pub struct Info {
   path: PathBuf,
   frames: Vec<Frame>,
-}
-
-#[command]
-// pub async fn open(path: PathBuf, app: State<'_, Data>, win: Window) -> Result<(), String> {
-pub async fn open_dialog(app: State<'_, Data>) -> Result<Option<Info>, String> {
-  let path = dialog::FileDialogBuilder::default()
-    .add_filter("Audio file", &["mp3", "m4a", "wav", "aiff"])
-    .pick_file();
-  let path = match path {
-    None => return Ok(None),
-    Some(p) => p,
-  };
-  return open(path, app).await;
 }
 
 #[command]

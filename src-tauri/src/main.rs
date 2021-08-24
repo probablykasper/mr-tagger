@@ -64,12 +64,7 @@ fn main() {
       menu = menu.add_native_item(MenuItem::SelectAll);
       menu
     }))
-    .add_submenu(Submenu::new(
-      "View",
-      Menu::new()
-        .add_item(custom_menu("Dashboard").accelerator("cmdOrControl+1"))
-        .add_item(custom_menu("Transactions").accelerator("cmdOrControl+2")),
-    ))
+    .add_submenu(Submenu::new("View", Menu::new()))
     .add_submenu(Submenu::new(
       "Window",
       Menu::new()
@@ -84,11 +79,7 @@ fn main() {
 
   let ctx = tauri::generate_context!();
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![
-      cmd::open,
-      cmd::open_dialog,
-      cmd::error_popup
-    ])
+    .invoke_handler(tauri::generate_handler![cmd::open, cmd::error_popup])
     .create_window("main", WindowUrl::default(), |win, webview| {
       let win = win
         .title("Mr Tagger")

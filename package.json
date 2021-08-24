@@ -11,16 +11,16 @@
     "format": "prettier --write *.js *.json src"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^1.0.0-next.11",
-    "@tauri-apps/api": "1.0.0-beta.5",
-    "@tauri-apps/cli": "1.0.0-beta.6",
+    "@sveltejs/vite-plugin-svelte": "1.0.0-next.19",
+    "@tauri-apps/api": "1.0.0-beta.8",
+    "@tauri-apps/cli": "1.0.0-beta.10",
     "prettier": "^2.3.2",
     "prettier-plugin-svelte": "^2.3.1",
-    "sass": "^1.36.0",
-    "svelte": "^3.41.0",
-    "svelte-preprocess": "^4.7.4",
+    "sass": "^1.38.1",
+    "svelte": "^3.42.3",
+    "svelte-preprocess": "^4.8.0",
     "typescript": "^4.3.5",
-    "vite": "^2.4.4"
+    "vite": "^2.5.1"
   },
   "prettier": {
     "printWidth": 100,

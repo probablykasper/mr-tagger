@@ -7,21 +7,15 @@ edition = "2018"
 build = "src/build.rs"
 
 [build-dependencies]
-tauri-build = { version = "1.0.0-beta.3" }
+tauri-build = { version = "1.0.0-beta.4" }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.0.0-beta.5", features = ["dialog-open", "dialog-save", "menu", "shell-open"] }
+tauri = { version = "1.0.0-beta.8", features = ["dialog-open", "dialog-save", "shell-open"] }
 id3 = "0.6.4"
 mp4ameta = "0.11.0"
 
 [features]
 default = [ "custom-protocol" ]
 custom-protocol = [ "tauri/custom-protocol" ]
-
-[profile.dev]
-# speeds up incremental builds a lot. Should be default in a new Rust
-# version: https://github.com/rust-lang/cargo/pull/9298
-# https://jakedeichert.com/blog/reducing-rust-incremental-compilation-times-on-macos-by-70-percent/
-split-debuginfo = "unpacked"
