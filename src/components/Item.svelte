@@ -3,35 +3,45 @@
     Text?: { id: string; value: string }
   }
   export type Image = {
+    index: number
+    total_images: number
     data: Uint8Array
     mime_type: string
   }
   export type Item = {
     path: string
-    artwork: Image | null
     frames: Frame[]
   }
   let x = 0 // to fix syntax highlighting
 </script>
 
 <script lang="ts">
+  import { runCmd } from '../scripts/helpers'
+
   export let item: Item
   console.log(item)
-  let artworkSrc: string | null = null
-  $: if (item.artwork) {
-    artworkSrc = 'data:' + 'item.artwork.mime_type' + ';base64,' + '' + item.artwork.data
-    // let blob = new Blob([item.artwork.data], { type: item.artwork.mime_type })
-    // artworkSrc = URL.createObjectURL(blob)
-  } else {
-    artworkSrc = null
+
+  let image: Image | null = null
+  $: if (item) {
+    image = null
+    getImage(null)
+  }
+  async function getImage(index: number | null) {
+    image = (await runCmd('get_image', { index })) as Image | null
+  }
+  async function removeArtwork() {
+    if (image) {
+      await runCmd('remove_image', { index: image.index })
+      getImage(null)
+    }
   }
 </script>
 
 <main>
   <div class="left">
-    {#if artworkSrc}
+    {#if image}
       <div class="cover">
-        <img src={artworkSrc} alt="" />
+        <img src={'data:' + image.mime_type + ';base64,' + image.data} alt="" />
       </div>
     {:else}
       <div class="svg-cover">
@@ -46,8 +56,9 @@
         </svg>
       </div>
     {/if}
-    {#if item.artwork}
-      {item.artwork.mime_type}
+    {#if image}
+      <div>{image.index + 1} of {image.total_images}, {image.mime_type}</div>
+      <div><button on:click={removeArtwork}>Remove</button></div>
     {/if}
   </div>
   <div class="right">

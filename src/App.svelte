@@ -9,9 +9,7 @@
   let selected: number | null = null
   async function addFiles(files: string[]) {
     for (const file of files) {
-      if (openFiles.includes(file)) {
-        popup('Skipping duplicate file: ' + file)
-      } else {
+      if (!openFiles.includes(file)) {
         openFiles.push(file)
         openFiles = openFiles
       }
@@ -35,8 +33,10 @@
     }
   }
   async function open(index: number) {
-    item = (await invoke('open', { path: openFiles[index] }).catch(popup)) as any
-    selected = index
+    if (selected !== index) {
+      item = (await invoke('open', { path: openFiles[index] }).catch(popup)) as any
+      selected = index
+    }
   }
   async function filesKeydown(e: KeyboardEvent) {
     if (checkShortcut(e, 'ArrowUp')) {

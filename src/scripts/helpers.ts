@@ -5,6 +5,10 @@ export function popup(msg: string) {
   invoke('error_popup', { msg })
 }
 
+export async function runCmd(cmd: string, options: { [key: string]: unknown } = {}) {
+  return await invoke(cmd, options).catch(popup)
+}
+
 export function extractUnlistener(futureUnlistener: Promise<event.UnlistenFn>) {
   return async () => {
     const unlisten = await futureUnlistener

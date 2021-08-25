@@ -16,7 +16,7 @@ pub struct Item {
 
 #[derive(Debug, Default)]
 pub struct App {
-  open_item: Option<Item>,
+  item: Option<Item>,
 }
 
 #[derive(Default)]
@@ -59,15 +59,8 @@ fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
 }
 
 #[derive(Serialize)]
-pub struct Image {
-  data: String,
-  mime_type: String,
-}
-
-#[derive(Serialize)]
 pub struct Info {
   path: PathBuf,
-  artwork: Option<Image>,
   frames: Vec<Frame>,
 }
 
@@ -75,44 +68,103 @@ pub struct Info {
 pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, String> {
   let mut app = app.0.lock().unwrap();
   let metadata = get_metadata(&path)?;
-  app.open_item = Some(Item {
+  app.item = Some(Item {
     path: path.clone(),
     metadata: metadata.clone(),
   });
   let info = Info {
     path,
-    artwork: match metadata {
-      Metadata::Id3(ref tag) => {
-        let mut img = match tag.pictures().next() {
-          Some(pic) => Some(Image {
-            data: base64::encode(&pic.data),
-            mime_type: pic.mime_type.clone(),
-          }),
-          None => None,
-        };
-        for pic in tag.pictures() {
-          if pic.picture_type == id3::frame::PictureType::CoverFront {
-            img = Some(Image {
-              data: base64::encode(&pic.data),
-              mime_type: pic.mime_type.clone(),
-            });
-          }
-        }
-        img
-      }
-      Metadata::Mp4(ref tag) => match tag.artwork() {
-        Some(artwork) => Some(Image {
-          data: base64::encode(&artwork.data),
-          mime_type: match artwork.fmt {
-            mp4ameta::ImgFmt::Bmp => "BMP".to_string(),
-            mp4ameta::ImgFmt::Jpeg => "JPEG".to_string(),
-            mp4ameta::ImgFmt::Png => "PNG".to_string(),
-          },
-        }),
-        None => None,
-      },
-    },
     frames: get_frames(&metadata),
   };
   Ok(Some(info))
+}
+
+#[derive(Serialize)]
+pub struct Image {
+  index: usize,
+  total_images: usize,
+  data: String,
+  mime_type: String,
+}
+
+#[command]
+pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Result<Option<Image>, String> {
+  let app = app.0.lock().unwrap();
+  let item = app.item.as_ref().unwrap();
+  let index = match index {
+    Some(index) => index,
+    None => match item.metadata {
+      Metadata::Id3(ref tag) => {
+        let mut index = match tag.pictures().next() {
+          Some(_pic) => 0,
+          None => return Ok(None),
+        };
+        for (i, current_pic) in tag.pictures().enumerate() {
+          if current_pic.picture_type == id3::frame::PictureType::CoverFront {
+            index = i;
+            break;
+          }
+        }
+        index
+      }
+      Metadata::Mp4(ref tag) => match tag.artwork() {
+        Some(_artwork) => 0,
+        None => return Ok(None),
+      },
+    },
+  };
+  let image = match item.metadata {
+    Metadata::Id3(ref tag) => match tag.pictures().nth(index) {
+      Some(pic) => Some(Image {
+        index,
+        total_images: tag.pictures().count(),
+        data: base64::encode(&pic.data),
+        mime_type: pic.mime_type.clone(),
+      }),
+      None => None,
+    },
+    Metadata::Mp4(ref tag) => match tag.artworks().nth(index) {
+      Some(artwork) => Some(Image {
+        index,
+        total_images: tag.artworks().count(),
+        data: base64::encode(&artwork.data),
+        mime_type: match artwork.fmt {
+          mp4ameta::ImgFmt::Bmp => "image/bmp".to_string(),
+          mp4ameta::ImgFmt::Jpeg => "image/jpeg".to_string(),
+          mp4ameta::ImgFmt::Png => "image/png".to_string(),
+        },
+      }),
+      None => None,
+    },
+  };
+  Ok(image)
+}
+
+#[command]
+pub fn remove_image(index: usize, app: State<'_, Data>) -> Result<(), String> {
+  let mut app = app.0.lock().unwrap();
+  let item = match &mut app.item {
+    Some(item) => item,
+    None => throw!("No open item"),
+  };
+  match item.metadata {
+    Metadata::Id3(ref mut tag) => {
+      let mut pic_frames: Vec<_> = tag
+        .frames()
+        .filter(|frame| frame.content().picture().is_some())
+        .map(|frame| frame.clone())
+        .collect();
+      pic_frames.remove(index);
+      tag.remove_all_pictures();
+      for pic_frame in pic_frames {
+        tag.add_frame(pic_frame);
+      }
+    }
+    Metadata::Mp4(ref mut tag) => {
+      let mut artworks: Vec<_> = tag.take_artworks().collect();
+      artworks.remove(index);
+      tag.set_artworks(artworks);
+    }
+  }
+  Ok(())
 }
