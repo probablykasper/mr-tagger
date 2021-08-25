@@ -1,24 +1,37 @@
 <script lang="ts">
   import { invoke, dialog } from '@tauri-apps/api'
-  import { checkShortcut, popup } from './scripts/helpers'
-  import ItemView from './components/Item.svelte'
-  import type { Item } from './components/Item.svelte'
+  import { checkShortcut, popup, runCmd } from './scripts/helpers'
+  import PageView from './components/Item.svelte'
+  import type { Page } from './components/Item.svelte'
   import FileDrop from './components/FileDrop.svelte'
 
-  let openFiles: string[] = []
-  let selected: number | null = null
-  async function addFiles(files: string[]) {
-    for (const file of files) {
-      if (!openFiles.includes(file)) {
-        openFiles.push(file)
-        openFiles = openFiles
-      }
-    }
-    if (selected === null && openFiles.length > 0) {
-      open(openFiles.length - 1)
+  type File = {
+    path: string
+  }
+  type App = {
+    current_index: number
+    files: File[]
+  }
+  let app: App = {
+    current_index: 0,
+    files: [],
+  }
+  ;(async () => {
+    app = await runCmd<App>('open_files', { paths: [] })
+  })()
+
+  let page: Page | null = null
+  $: if (app) getPage()
+  async function getPage() {
+    let newPage = await runCmd<Page>('get_page')
+    if (!page || newPage.path !== page.path) {
+      page = newPage
     }
   }
-  let item: Item | null = null
+
+  async function openFiles(paths: string[]) {
+    app = await runCmd<App>('open_files', { paths })
+  }
   async function openDialog() {
     let paths = await dialog.open({
       filters: [{ name: 'Audio file', extensions: ['mp3', 'm4a', 'wav', 'aiff'] }],
@@ -29,29 +42,24 @@
       paths = [paths]
     }
     if (paths !== null) {
-      await addFiles(paths)
+      await openFiles(paths)
     }
   }
-  async function open(index: number) {
-    if (selected !== index) {
-      item = (await invoke('open', { path: openFiles[index] }).catch(popup)) as any
-      selected = index
+  async function show(index: number) {
+    if (app.current_index !== index) {
+      app = await runCmd<App>('show', { index })
     }
   }
   async function filesKeydown(e: KeyboardEvent) {
     if (checkShortcut(e, 'ArrowUp')) {
       e.preventDefault()
-      if (selected !== null && selected > 0) {
-        open(selected - 1)
-      } else if (selected === null && openFiles.length >= 1) {
-        open(openFiles.length - 1)
+      if (app.current_index >= 1) {
+        show(app.current_index - 1)
       }
     } else if (checkShortcut(e, 'ArrowDown')) {
       e.preventDefault()
-      if (selected !== null && selected < openFiles.length - 1) {
-        open(selected + 1)
-      } else if (selected === null && openFiles.length >= 1) {
-        open(0)
+      if (app.current_index < app.files.length - 1) {
+        show(app.current_index + 1)
       }
     }
   }
@@ -63,19 +71,19 @@
       <button on:click={openDialog}>Open Files</button>
     </div>
     <div class="files" tabindex="0" on:keydown={filesKeydown}>
-      {#each openFiles as file, i}
-        <div class="row" class:selected={i === selected} on:click={() => open(i)}
-          >{file.replace(/^.*[\\\/]/, '')}</div>
+      {#each app.files as file, i}
+        <div class="row" class:selected={i === app.current_index} on:click={() => show(i)}
+          >{file.path.replace(/^.*[\\\/]/, '')}</div>
       {/each}
     </div>
     <FileDrop
       fileExtensions={['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']}
-      handleFiles={addFiles}
+      handleFiles={openFiles}
       msg="" />
   </div>
   <div class="main">
-    {#if item}
-      <ItemView {item} />
+    {#if page}
+      <PageView item={page} />
     {/if}
   </div>
 </main>

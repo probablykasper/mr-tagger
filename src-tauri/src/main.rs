@@ -80,7 +80,9 @@ fn main() {
   let ctx = tauri::generate_context!();
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
-      cmd::open,
+      cmd::open_files,
+      cmd::show,
+      cmd::get_page,
       cmd::error_popup,
       cmd::get_image,
       cmd::remove_image

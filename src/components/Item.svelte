@@ -8,7 +8,7 @@
     data: Uint8Array
     mime_type: string
   }
-  export type Item = {
+  export type Page = {
     path: string
     frames: Frame[]
   }
@@ -18,7 +18,7 @@
 <script lang="ts">
   import { runCmd } from '../scripts/helpers'
 
-  export let item: Item
+  export let item: Page
   console.log(item)
 
   let image: Image | null = null

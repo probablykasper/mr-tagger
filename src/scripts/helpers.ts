@@ -5,8 +5,8 @@ export function popup(msg: string) {
   invoke('error_popup', { msg })
 }
 
-export async function runCmd(cmd: string, options: { [key: string]: unknown } = {}) {
-  return await invoke(cmd, options).catch(popup)
+export async function runCmd<T = unknown>(cmd: string, options: { [key: string]: unknown } = {}) {
+  return (await invoke(cmd, options).catch(popup)) as T
 }
 
 export function extractUnlistener(futureUnlistener: Promise<event.UnlistenFn>) {

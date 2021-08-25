@@ -2,21 +2,32 @@ use crate::frames::{get_frames, Frame, Metadata};
 use crate::throw;
 use base64;
 use serde::Serialize;
+use serde_json::Value;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::api::dialog;
 use tauri::{command, State};
 
-#[derive(Debug, Clone)]
-pub struct Item {
+#[derive(Debug, Clone, Serialize)]
+pub struct File {
   path: PathBuf,
+  #[serde(skip_serializing)]
   metadata: Metadata,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct App {
-  item: Option<Item>,
+  current_index: usize,
+  files: Vec<File>,
+}
+impl App {
+  fn current_file(&mut self) -> Result<&mut File, String> {
+    match self.files.get_mut(self.current_index) {
+      Some(file) => Ok(file),
+      None => throw!("Error getting open file"),
+    }
+  }
 }
 
 #[derive(Default)]
@@ -32,25 +43,26 @@ pub fn error_popup(msg: String, win: tauri::Window) {
 
 fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
   let ext = path.extension().unwrap_or_default().to_string_lossy();
+  let path_str = path.to_string_lossy();
   let metadata = match ext.as_ref() {
-    "mp3" | "aiff" | "wav" => {
+    "mp3" | "aiff" => {
       let tag = match id3::Tag::read_from_path(&path) {
         Ok(tag) => tag,
-        Err(_) => id3::Tag::new(),
+        Err(e) => match e.kind {
+          id3::ErrorKind::NoTag => id3::Tag::default(),
+          _ => throw!("Error reading tag for file {}: {}", path_str, e.description),
+        },
       };
-      // for frame in tag.frames() {
-      //   println!("MP3 FRAME {:?}", frame);
-      // }
       Metadata::Id3(tag)
     }
     "m4a" | "mp4" | "m4p" | "m4b" | "m4r" | "m4v" => {
       let tag = match mp4ameta::Tag::read_from_path(&path) {
         Ok(tag) => tag,
-        Err(_) => throw!("No tags found"),
+        Err(e) => match e.kind {
+          mp4ameta::ErrorKind::NoTag => mp4ameta::Tag::default(),
+          _ => throw!("Error reading tag for file {}: {}", path_str, e.description),
+        },
       };
-      // for (ident, data) in tag.data() {
-      //   println!("M4A FRAME {:?}, {:?}", ident, data);
-      // }
       Metadata::Mp4(tag)
     }
     _ => throw!("Unsupported file type"),
@@ -58,25 +70,47 @@ fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
   Ok(metadata)
 }
 
+#[command]
+pub async fn open_files(paths: Vec<PathBuf>, app: State<'_, Data>) -> Result<Value, String> {
+  let mut app = app.0.lock().unwrap();
+  let initial_len = app.files.len();
+  for path in paths {
+    let is_duplicate = app.files.iter().any(|f| f.path == path);
+    if !is_duplicate {
+      let metadata = get_metadata(&path)?;
+      app.files.push(File {
+        path: path.clone(),
+        metadata: metadata.clone(),
+      });
+    }
+  }
+  if initial_len == 0 {
+    app.current_index = app.files.len() - 1;
+  }
+  Ok(serde_json::to_value(&*app).unwrap())
+}
+
+#[command]
+pub fn show(index: usize, app: State<'_, Data>) -> Result<Value, String> {
+  let mut app = app.0.lock().unwrap();
+  app.current_index = index;
+  Ok(serde_json::to_value(&*app).unwrap())
+}
+
 #[derive(Serialize)]
-pub struct Info {
+pub struct Page {
   path: PathBuf,
   frames: Vec<Frame>,
 }
 
 #[command]
-pub async fn open(path: PathBuf, app: State<'_, Data>) -> Result<Option<Info>, String> {
+pub fn get_page(app: State<'_, Data>) -> Result<Page, String> {
   let mut app = app.0.lock().unwrap();
-  let metadata = get_metadata(&path)?;
-  app.item = Some(Item {
-    path: path.clone(),
-    metadata: metadata.clone(),
-  });
-  let info = Info {
-    path,
-    frames: get_frames(&metadata),
-  };
-  Ok(Some(info))
+  let file = app.current_file()?;
+  Ok(Page {
+    path: file.path.clone(),
+    frames: get_frames(&file.metadata),
+  })
 }
 
 #[derive(Serialize)]
@@ -88,16 +122,16 @@ pub struct Image {
 }
 
 #[command]
-pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Result<Option<Image>, String> {
-  let app = app.0.lock().unwrap();
-  let item = app.item.as_ref().unwrap();
+pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Option<Image> {
+  let mut app = app.0.lock().unwrap();
+  let file = app.current_file().ok()?;
   let index = match index {
     Some(index) => index,
-    None => match item.metadata {
+    None => match file.metadata {
       Metadata::Id3(ref tag) => {
         let mut index = match tag.pictures().next() {
           Some(_pic) => 0,
-          None => return Ok(None),
+          None => return None,
         };
         for (i, current_pic) in tag.pictures().enumerate() {
           if current_pic.picture_type == id3::frame::PictureType::CoverFront {
@@ -109,11 +143,11 @@ pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Result<Option<Im
       }
       Metadata::Mp4(ref tag) => match tag.artwork() {
         Some(_artwork) => 0,
-        None => return Ok(None),
+        None => return None,
       },
     },
   };
-  let image = match item.metadata {
+  match file.metadata {
     Metadata::Id3(ref tag) => match tag.pictures().nth(index) {
       Some(pic) => Some(Image {
         index,
@@ -136,18 +170,14 @@ pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Result<Option<Im
       }),
       None => None,
     },
-  };
-  Ok(image)
+  }
 }
 
 #[command]
 pub fn remove_image(index: usize, app: State<'_, Data>) -> Result<(), String> {
   let mut app = app.0.lock().unwrap();
-  let item = match &mut app.item {
-    Some(item) => item,
-    None => throw!("No open item"),
-  };
-  match item.metadata {
+  let file = app.current_file().unwrap();
+  match file.metadata {
     Metadata::Id3(ref mut tag) => {
       let mut pic_frames: Vec<_> = tag
         .frames()
