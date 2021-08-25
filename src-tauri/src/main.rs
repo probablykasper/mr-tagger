@@ -87,8 +87,8 @@ fn main() {
         .transparent(false)
         .decorations(true)
         .always_on_top(false)
-        .inner_size(800.0, 600.0)
-        .min_inner_size(300.0, 150.0)
+        .inner_size(800.0, 550.0)
+        .min_inner_size(400.0, 200.0)
         .skip_taskbar(false)
         .fullscreen(false);
       return (win, webview);

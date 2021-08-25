@@ -9,16 +9,13 @@
   export let fileExtensions: string[] = []
   export let handleFiles: (files: string[]) => void
 
-  // workaround for https://github.com/tauri-apps/tauri/issues/2323
-  let readyToListen = false
-  setTimeout(() => (readyToListen = true), 100)
-
   function getValidPaths(paths: string[]) {
     let validPaths = []
     for (const path of paths) {
       for (const ext of fileExtensions) {
         if (path.endsWith('.' + ext)) {
           validPaths.push(path)
+          break
         }
       }
     }
@@ -26,7 +23,6 @@
   }
   onMount(() => {
     const unlisten = event.listen('tauri://file-drop-hover', (e) => {
-      if (!readyToListen) return
       const validPaths = getValidPaths(e.payload as string[])
       if (validPaths.length > 0) {
         droppable = true
@@ -36,7 +32,6 @@
   })
   onMount(() => {
     const unlisten = event.listen('tauri://file-drop', (e) => {
-      if (!readyToListen) return
       const validPaths = getValidPaths(e.payload as string[])
       if (validPaths.length > 0) {
         droppable = false
@@ -47,7 +42,6 @@
   })
   onMount(() => {
     const unlisten = event.listen('tauri://file-drop-cancelled', (e) => {
-      if (!readyToListen) return
       droppable = false
     })
     return extractUnlistener(unlisten)
@@ -55,7 +49,6 @@
 </script>
 
 {#if droppable}
-  <!-- if the overlay is always visible, it's not possible to scroll while dragging tracks -->
   <div class="drag-overlay" transition:fade={{ duration: 100 }}>
     <h1>{msg}</h1>
   </div>

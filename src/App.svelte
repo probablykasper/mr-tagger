@@ -42,16 +42,21 @@
 
 <main>
   <div class="sidebar">
-    <div class="row">
+    <div class="topbar">
       <button on:click={openDialog}>Open Files</button>
     </div>
-    {#each openFiles as file, i}
-      <div class="row" class:selected={i === selected} on:click={() => open(i)}
-        >{file.replace(/^.*[\\\/]/, '')}</div>
-    {/each}
-    <FileDrop fileExtensions={['mp3']} handleFiles={addFiles} msg="" />
+    <div class="files">
+      {#each openFiles as file, i}
+        <div class="row" class:selected={i === selected} on:click={() => open(i)}
+          >{file.replace(/^.*[\\\/]/, '')}</div>
+      {/each}
+    </div>
+    <FileDrop
+      fileExtensions={['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']}
+      handleFiles={addFiles}
+      msg="" />
   </div>
-  <div class="page">
+  <div class="main">
     {#if item}
       <ItemView {item} />
     {/if}
@@ -65,24 +70,36 @@
     font-size: 18px
     background-color: #191B20
     overflow: hidden
+    user-select: none
+    -webkit-user-select: none
   main
     display: flex
     color: #e6e6e6
     height: 100vh
-  .page
+  .main
     flex-grow: 1
+    width: 0px
+    overflow: auto
   .sidebar
     position: relative
-    width: 230px
+    display: flex
+    flex-direction: column
+    width: 250px
     height: 100%
-    background-color: rgba(#ffffff, 0.03)
+    background-color: #202227
     border-right: 1px solid rgba(#ffffff, 0.1)
-    font-size: 13px
+    font-size: 12px
+  .topbar
+    padding: 8px
+    border-bottom: 1px solid rgba(#ffffff, 0.1)
+  .files
+    overflow-y: auto
+    height: 100%
     .row
-      padding: 8px
+      padding: 7px 8px
       cursor: default
     .row:nth-child(2n)
       background-color: rgba(#ffffff, 0.05)
     .row.selected
-      background-color: #074a97
+      background-color: #7f0644
 </style>
