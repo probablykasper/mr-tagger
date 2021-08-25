@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke, dialog } from '@tauri-apps/api'
-  import { popup } from './scripts/helpers'
+  import { checkShortcut, popup } from './scripts/helpers'
   import ItemView from './components/Item.svelte'
   import type { Item } from './components/Item.svelte'
   import FileDrop from './components/FileDrop.svelte'
@@ -38,6 +38,23 @@
     item = (await invoke('open', { path: openFiles[index] }).catch(popup)) as any
     selected = index
   }
+  async function filesKeydown(e: KeyboardEvent) {
+    if (checkShortcut(e, 'ArrowUp')) {
+      e.preventDefault()
+      if (selected !== null && selected > 0) {
+        open(selected - 1)
+      } else if (selected === null && openFiles.length >= 1) {
+        open(openFiles.length - 1)
+      }
+    } else if (checkShortcut(e, 'ArrowDown')) {
+      e.preventDefault()
+      if (selected !== null && selected < openFiles.length - 1) {
+        open(selected + 1)
+      } else if (selected === null && openFiles.length >= 1) {
+        open(0)
+      }
+    }
+  }
 </script>
 
 <main>
@@ -45,7 +62,7 @@
     <div class="topbar">
       <button on:click={openDialog}>Open Files</button>
     </div>
-    <div class="files">
+    <div class="files" tabindex="0" on:keydown={filesKeydown}>
       {#each openFiles as file, i}
         <div class="row" class:selected={i === selected} on:click={() => open(i)}
           >{file.replace(/^.*[\\\/]/, '')}</div>
@@ -95,11 +112,14 @@
   .files
     overflow-y: auto
     height: 100%
+    outline: none
     .row
       padding: 7px 8px
       cursor: default
     .row:nth-child(2n)
       background-color: rgba(#ffffff, 0.05)
     .row.selected
-      background-color: #7f0644
+      background-color: hsl(147, 0%, 35%)
+    &:focus .row.selected
+      background-color: hsl(147, 70%, 30%)
 </style>
