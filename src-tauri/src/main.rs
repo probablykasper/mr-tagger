@@ -9,6 +9,7 @@ use tauri::api::{dialog, shell};
 use tauri::{CustomMenuItem, Manager, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
 
 mod cmd;
+mod files;
 mod frames;
 mod image;
 
@@ -44,13 +45,9 @@ fn main() {
       Menu::new()
         .add_item(custom_menu("Open...").accelerator("cmdOrControl+O"))
         .add_native_item(MenuItem::Separator)
-        .add_item(custom_menu("Save").disabled().accelerator("cmdOrControl+S"))
-        .add_item(
-          custom_menu("Save As...")
-            .disabled()
-            .accelerator("shift+cmdOrControl+S"),
-        )
-        .add_item(custom_menu("Close").accelerator("cmdOrControl+W")),
+        .add_item(custom_menu("Close").accelerator("cmdOrControl+W"))
+        .add_item(custom_menu("Save").accelerator("cmdOrControl+S"))
+        .add_item(custom_menu("Save As...").accelerator("shift+cmdOrControl+S")),
     ))
     .add_submenu(Submenu::new("Edit", {
       let mut menu = Menu::new();
@@ -85,10 +82,11 @@ fn main() {
     .invoke_handler(tauri::generate_handler![
       cmd::error_popup,
       cmd::get_app,
-      cmd::open_files,
-      cmd::close_file,
       cmd::show,
       cmd::get_page,
+      files::open_files,
+      files::close_file,
+      files::save_file,
       image::get_image,
       image::remove_image,
       image::set_image,

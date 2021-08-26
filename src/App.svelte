@@ -39,7 +39,7 @@
   let extensions = ['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']
   async function openDialog() {
     let paths = await dialog.open({
-      filters: [{ name: 'Audio file', extensions }],
+      filters: [{ name: 'Audio/Video file', extensions }],
       multiple: true,
       directory: false,
     })
@@ -64,6 +64,10 @@
     await runCmd('close_file', { index })
     getApp()
   }
+  async function saveFile(saveAs: boolean) {
+    await runCmd('save_file', { index: app.current_index, saveAs })
+    getApp()
+  }
   async function filesKeydown(e: KeyboardEvent) {
     if (checkShortcut(e, 'ArrowUp')) {
       e.preventDefault()
@@ -82,6 +86,10 @@
       openDialog()
     } else if (payload === 'Close') {
       close(app.current_index)
+    } else if (payload === 'Save') {
+      saveFile(false)
+    } else if (payload === 'Save As...') {
+      saveFile(true)
     }
   })
   onDestroy(async () => {
@@ -98,7 +106,11 @@
     <div class="files" tabindex="0" on:keydown={filesKeydown}>
       {#each app.files as file, i}
         <div class="file" class:selected={i === app.current_index} on:click={() => show(i)}>
-          <div class="icon x" on:click|stopPropagation={() => close(i)}>x</div>
+          <div class="icon x" on:click|stopPropagation={() => close(i)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+              ><path
+                d="M23.954 21.03l-9.184-9.095 9.092-9.174-2.832-2.807-9.09 9.179-9.176-9.088-2.81 2.81 9.186 9.105-9.095 9.184 2.81 2.81 9.112-9.192 9.18 9.1z" /></svg>
+          </div>
           <div class="icon dirty">
             {#if file.dirty}
               <svg width="6" height="6" xmlns="http://www.w3.org/2000/svg">
@@ -114,6 +126,7 @@
   </div>
   <div class="main">
     {#if page}
+      <button on:click={() => saveFile(false)}>Save</button>
       <PageView item={page} on:appRefresh={getApp} />
     {/if}
   </div>
@@ -162,18 +175,25 @@
         display: flex
         align-items: center
         justify-content: center
-        width: 6px
-        min-width: 6px
-        margin-left: 6px
-        margin-right: 4px
+        width: 8px
+        height: 8px
+        flex-shrink: 0
+        padding: 3px
+        margin-right: 3px
+        margin-left: 5px
+        border-radius: 2px
+        &:hover
+          background-color: rgba(#ffffff, 0.15)
       .x
         display: none
       &:hover .x
-        display: block
+        display: flex
       &:hover .dirty
         display: none
-      .dirty svg
+      svg
         fill: #ffffff
+        // width: 6px
+        // height: 6px
     .file:nth-child(2n)
       background-color: rgba(#ffffff, 0.05)
     .file.selected

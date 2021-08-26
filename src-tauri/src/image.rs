@@ -136,11 +136,12 @@ pub fn set_image(index: usize, path: PathBuf, app: AppArg<'_>) -> Result<(), Str
           *old_frame = new_frame;
         }
         None => {
-          if index != pic_frames.len() {
+          if index == pic_frames.len() {
+            let new_frame = id3::Frame::with_content("APIC", id3::Content::Picture(new_pic));
+            pic_frames.insert(index, new_frame);
+          } else {
             throw!("Index out of range");
           }
-          let new_frame = id3::Frame::with_content("APIC", id3::Content::Picture(new_pic));
-          pic_frames.insert(index, new_frame);
         }
       }
       tag.remove_all_pictures();
@@ -150,8 +151,7 @@ pub fn set_image(index: usize, path: PathBuf, app: AppArg<'_>) -> Result<(), Str
     }
     Metadata::Mp4(ref mut tag) => {
       let mut artworks: Vec<_> = tag.take_artworks().collect();
-      let artwork = artworks.get_mut(index).unwrap();
-      *artwork = mp4ameta::Img {
+      let new_artwork = mp4ameta::Img {
         fmt: match ext.as_ref() {
           "jpg" | "jpeg" => mp4ameta::ImgFmt::Jpeg,
           "png" => mp4ameta::ImgFmt::Png,
@@ -160,6 +160,18 @@ pub fn set_image(index: usize, path: PathBuf, app: AppArg<'_>) -> Result<(), Str
         },
         data: new_bytes,
       };
+      match artworks.get_mut(index) {
+        Some(artwork) => {
+          *artwork = new_artwork;
+        }
+        None => {
+          if index == artworks.len() {
+            artworks.push(new_artwork);
+          } else {
+            throw!("Index out of range");
+          }
+        }
+      }
       tag.set_artworks(artworks);
     }
   }
