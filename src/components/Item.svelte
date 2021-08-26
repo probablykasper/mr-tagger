@@ -21,6 +21,7 @@
   import { createEventDispatcher } from 'svelte'
   import { runCmd } from '../scripts/helpers'
   import { dialog } from '@tauri-apps/api'
+  import FileDrop from './FileDrop.svelte'
 
   export let item: Page
 
@@ -53,27 +54,34 @@
       dispatch('appRefresh')
     }
   }
+  async function setArtwork(path: string) {
+    if (image) {
+      await runCmd('replace_image', { index: image.index, path })
+      getImage(image.index)
+      dispatch('appRefresh')
+    }
+  }
+  let svgWidth = 0
 </script>
 
 <main>
   <div class="left">
-    {#if image}
-      <div class="cover">
+    <div class="cover">
+      {#if image}
         <img src={'data:' + image.mime_type + ';base64,' + image.data} alt="" />
-      </div>
-    {:else}
-      <div class="svg-cover">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMin meet"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24">
-          <path
-            d="M23 0l-15.996 3.585v13.04c-2.979-.589-6.004 1.671-6.004 4.154 0 2.137 1.671 3.221 3.485 3.221 2.155 0 4.512-1.528 4.515-4.638v-10.9l12-2.459v8.624c-2.975-.587-6 1.664-6 4.141 0 2.143 1.715 3.232 3.521 3.232 2.14 0 4.476-1.526 4.479-4.636v-17.364z" />
-        </svg>
-      </div>
-    {/if}
+      {:else}
+        <div class="svg-cover" bind:clientWidth={svgWidth} style={'height:' + svgWidth + 'px'}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="xMidYMin meet"
+            viewBox="0 0 24 24">
+            <path
+              d="M23 0l-15.996 3.585v13.04c-2.979-.589-6.004 1.671-6.004 4.154 0 2.137 1.671 3.221 3.485 3.221 2.155 0 4.512-1.528 4.515-4.638v-10.9l12-2.459v8.624c-2.975-.587-6 1.664-6 4.141 0 2.143 1.715 3.232 3.521 3.232 2.14 0 4.476-1.526 4.479-4.636v-17.364z" />
+          </svg>
+        </div>
+      {/if}
+      <FileDrop fileExtensions={['jpeg', 'jpg', 'png', 'bmp']} handleOneFile={setArtwork} msg="" />
+    </div>
     {#if image}
       <div>
         <button on:click={removeArtwork}>Remove</button>
@@ -108,20 +116,24 @@
     font-size: 14px
   .left
     margin-right: 12px
-    min-width: 150px
-    width: 20%
+    min-width: 160px
+    width: calc(50% - 160px)
+    max-width: 250px
+  .right
+    width: 0px
+    flex-grow: 1
   img
+    display: block
     width: 100%
     min-height: 80px
     object-fit: contain
+  .cover
+    position: relative
   .svg-cover
-    width: 100%
-    padding-bottom: 100%
-  svg
-    width: 100%
-    height: 100%
     padding: 28%
     box-sizing: border-box
     background-color: #2b2c31
+  svg
+    box-sizing: border-box
     fill: #45464a
 </style>

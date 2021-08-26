@@ -36,9 +36,10 @@
     await runCmd<App>('open_files', { paths })
     getApp()
   }
+  let extensions = ['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']
   async function openDialog() {
     let paths = await dialog.open({
-      filters: [{ name: 'Audio file', extensions: ['mp3', 'm4a', 'wav', 'aiff'] }],
+      filters: [{ name: 'Audio file', extensions }],
       multiple: true,
       directory: false,
     })
@@ -107,10 +108,7 @@
         </div>
       {/each}
     </div>
-    <FileDrop
-      fileExtensions={['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']}
-      handleFiles={openFiles}
-      msg="" />
+    <FileDrop fileExtensions={extensions} handleFiles={openFiles} msg="" />
   </div>
   <div class="main">
     {#if page}
@@ -163,6 +161,7 @@
         align-items: center
         justify-content: center
         width: 6px
+        min-width: 6px
         margin-left: 6px
         margin-right: 4px
       .x

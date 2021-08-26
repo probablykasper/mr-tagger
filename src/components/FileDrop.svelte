@@ -7,7 +7,8 @@
   export let msg = 'Drop files'
   let droppable = false
   export let fileExtensions: string[] = []
-  export let handleFiles: (files: string[]) => void
+  export let handleFiles: (files: string[]) => void = () => {}
+  export let handleOneFile: (file: string) => void = () => {}
 
   function getValidPaths(paths: string[]) {
     let validPaths = []
@@ -37,6 +38,9 @@
         droppable = false
       }
       handleFiles(validPaths)
+      if (validPaths.length === 1) {
+        handleOneFile(validPaths[0])
+      }
     })
     return extractUnlistener(unlisten)
   })
