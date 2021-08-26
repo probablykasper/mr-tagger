@@ -7,6 +7,8 @@
     total_images: number
     data: Uint8Array
     mime_type: string
+    description: string | null
+    picture_type: string | null
   }
   export type Page = {
     path: string
@@ -21,7 +23,6 @@
   import { dialog } from '@tauri-apps/api'
 
   export let item: Page
-  console.log(item)
 
   let image: Image | null = null
   $: if (item) {
@@ -74,11 +75,18 @@
       </div>
     {/if}
     {#if image}
-      <div>{image.index + 1} of {image.total_images}, {image.mime_type}</div>
       <div>
         <button on:click={removeArtwork}>Remove</button>
         <button on:click={replaceArtwork}>Replace</button>
       </div>
+      <div>{image.index + 1} of {image.total_images}</div>
+      <div>{image.mime_type}</div>
+      {#if image.picture_type}
+        <div>Type: {image.picture_type}</div>
+      {/if}
+      {#if image.description}
+        <div>Description: {image.description}</div>
+      {/if}
     {/if}
   </div>
   <div class="right">

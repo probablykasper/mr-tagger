@@ -141,6 +141,8 @@ pub struct Image {
   total_images: usize,
   data: String,
   mime_type: String,
+  description: Option<String>,
+  picture_type: Option<String>,
 }
 
 #[command]
@@ -176,6 +178,8 @@ pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Option<Image> {
         total_images: tag.pictures().count(),
         data: base64::encode(&pic.data),
         mime_type: pic.mime_type.clone(),
+        description: Some(pic.description.clone()),
+        picture_type: Some(pic.picture_type.to_string()),
       }),
       None => None,
     },
@@ -189,6 +193,8 @@ pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Option<Image> {
           mp4ameta::ImgFmt::Jpeg => "image/jpeg".to_string(),
           mp4ameta::ImgFmt::Png => "image/png".to_string(),
         },
+        description: None,
+        picture_type: None,
       }),
       None => None,
     },
