@@ -3,7 +3,8 @@
   windows_subsystem = "windows"
 )]
 
-use tauri::{api, CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
+use tauri::api::shell;
+use tauri::{CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
 
 mod cmd;
 mod frames;
@@ -38,7 +39,6 @@ fn main() {
     .add_submenu(Submenu::new(
       "File",
       Menu::new()
-        .add_item(custom_menu("New").accelerator("cmdOrControl+N"))
         .add_item(custom_menu("Open...").accelerator("cmdOrControl+O"))
         .add_native_item(MenuItem::Separator)
         .add_item(custom_menu("Save").disabled().accelerator("cmdOrControl+S"))
@@ -80,12 +80,14 @@ fn main() {
   let ctx = tauri::generate_context!();
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
+      cmd::error_popup,
+      cmd::get_app,
       cmd::open_files,
+      cmd::close_file,
       cmd::show,
       cmd::get_page,
-      cmd::error_popup,
       cmd::get_image,
-      cmd::remove_image
+      cmd::remove_image,
     ])
     .create_window("main", WindowUrl::default(), |win, webview| {
       let win = win
@@ -100,17 +102,21 @@ fn main() {
         .fullscreen(false);
       return (win, webview);
     })
-    .manage(cmd::Data(Default::default()))
+    .manage(cmd::AppState(Default::default()))
     .menu(menu)
-    .on_menu_event(|event| match event.menu_item_id() {
-      "learn-more" => {
-        api::shell::open(
-          "https://github.com/probablykasper/mr-tagger".to_string(),
-          None,
-        )
-        .unwrap();
+    .on_menu_event(|event| {
+      let event_name = event.menu_item_id();
+      event.window().emit("menu", event_name).unwrap();
+      match event_name {
+        "Learn More" => {
+          shell::open(
+            "https://github.com/probablykasper/mr-tagger".to_string(),
+            None,
+          )
+          .unwrap();
+        }
+        _ => {}
       }
-      _ => {}
     })
     .run(ctx)
     .expect("error while running tauri app");

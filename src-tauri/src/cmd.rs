@@ -3,6 +3,7 @@ use crate::throw;
 use base64;
 use serde::Serialize;
 use serde_json::Value;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -12,6 +13,7 @@ use tauri::{command, State};
 #[derive(Debug, Clone, Serialize)]
 pub struct File {
   path: PathBuf,
+  dirty: bool,
   #[serde(skip_serializing)]
   metadata: Metadata,
 }
@@ -25,13 +27,17 @@ impl App {
   fn current_file(&mut self) -> Result<&mut File, String> {
     match self.files.get_mut(self.current_index) {
       Some(file) => Ok(file),
-      None => throw!("Error getting open file"),
+      None => {
+        throw!("Error getting open file")
+      }
     }
   }
 }
 
 #[derive(Default)]
-pub struct Data(pub Arc<Mutex<App>>);
+pub struct AppState(pub Arc<Mutex<App>>);
+
+type AppArg<'a> = State<'a, AppState>;
 
 #[command]
 pub fn error_popup(msg: String, win: tauri::Window) {
@@ -39,6 +45,12 @@ pub fn error_popup(msg: String, win: tauri::Window) {
   thread::spawn(move || {
     dialog::message(Some(&win), "Error", msg);
   });
+}
+
+#[command]
+pub fn get_app(app: AppArg<'_>) -> Value {
+  let app = app.0.lock().unwrap();
+  serde_json::to_value(&*app).unwrap()
 }
 
 fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
@@ -71,7 +83,7 @@ fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
 }
 
 #[command]
-pub async fn open_files(paths: Vec<PathBuf>, app: State<'_, Data>) -> Result<Value, String> {
+pub async fn open_files(paths: Vec<PathBuf>, app: AppArg<'_>) -> Result<(), String> {
   let mut app = app.0.lock().unwrap();
   let initial_len = app.files.len();
   for path in paths {
@@ -80,21 +92,31 @@ pub async fn open_files(paths: Vec<PathBuf>, app: State<'_, Data>) -> Result<Val
       let metadata = get_metadata(&path)?;
       app.files.push(File {
         path: path.clone(),
+        dirty: false,
         metadata: metadata.clone(),
       });
     }
   }
-  if initial_len == 0 {
+  if initial_len == 0 && app.files.len() >= 1 {
     app.current_index = app.files.len() - 1;
   }
-  Ok(serde_json::to_value(&*app).unwrap())
+  Ok(())
 }
 
 #[command]
-pub fn show(index: usize, app: State<'_, Data>) -> Result<Value, String> {
+pub async fn close_file(index: usize, app: AppArg<'_>) -> Result<(), String> {
+  let mut app = app.0.lock().unwrap();
+  app.files.remove(index);
+  if app.current_index >= index && index >= 1 {
+    app.current_index -= 1;
+  }
+  Ok(())
+}
+
+#[command]
+pub fn show(index: usize, app: AppArg<'_>) {
   let mut app = app.0.lock().unwrap();
   app.current_index = index;
-  Ok(serde_json::to_value(&*app).unwrap())
 }
 
 #[derive(Serialize)]
@@ -104,10 +126,10 @@ pub struct Page {
 }
 
 #[command]
-pub fn get_page(app: State<'_, Data>) -> Result<Page, String> {
+pub fn get_page(app: AppArg<'_>) -> Option<Page> {
   let mut app = app.0.lock().unwrap();
-  let file = app.current_file()?;
-  Ok(Page {
+  let file = app.current_file().ok()?;
+  Some(Page {
     path: file.path.clone(),
     frames: get_frames(&file.metadata),
   })
@@ -122,7 +144,7 @@ pub struct Image {
 }
 
 #[command]
-pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Option<Image> {
+pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Option<Image> {
   let mut app = app.0.lock().unwrap();
   let file = app.current_file().ok()?;
   let index = match index {
@@ -174,9 +196,10 @@ pub fn get_image(index: Option<usize>, app: State<'_, Data>) -> Option<Image> {
 }
 
 #[command]
-pub fn remove_image(index: usize, app: State<'_, Data>) -> Result<(), String> {
+pub fn remove_image(index: usize, app: AppArg<'_>) -> Result<(), String> {
   let mut app = app.0.lock().unwrap();
   let file = app.current_file().unwrap();
+  file.dirty = true;
   match file.metadata {
     Metadata::Id3(ref mut tag) => {
       let mut pic_frames: Vec<_> = tag

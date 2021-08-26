@@ -16,6 +16,7 @@
 </script>
 
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte'
   import { runCmd } from '../scripts/helpers'
 
   export let item: Page
@@ -29,10 +30,13 @@
   async function getImage(index: number | null) {
     image = (await runCmd('get_image', { index })) as Image | null
   }
+
+  const dispatch = createEventDispatcher()
   async function removeArtwork() {
     if (image) {
       await runCmd('remove_image', { index: image.index })
       getImage(null)
+      dispatch('appRefresh')
     }
   }
 </script>
@@ -84,6 +88,8 @@
     width: 20%
   img
     width: 100%
+    min-height: 80px
+    object-fit: contain
   .svg-cover
     width: 100%
     padding-bottom: 100%

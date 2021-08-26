@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { invoke, dialog } from '@tauri-apps/api'
-  import { checkShortcut, popup, runCmd } from './scripts/helpers'
+  import { dialog, event } from '@tauri-apps/api'
+  import { checkShortcut, runCmd } from './scripts/helpers'
   import PageView from './components/Item.svelte'
   import type { Page } from './components/Item.svelte'
   import FileDrop from './components/FileDrop.svelte'
+  import { onDestroy } from 'svelte'
 
   type File = {
     path: string
+    dirty: boolean
   }
   type App = {
     current_index: number
@@ -16,21 +18,23 @@
     current_index: 0,
     files: [],
   }
-  ;(async () => {
-    app = await runCmd<App>('open_files', { paths: [] })
-  })()
+  async function getApp() {
+    app = await runCmd<App>('get_app')
+  }
+  getApp()
 
   let page: Page | null = null
   $: if (app) getPage()
   async function getPage() {
-    let newPage = await runCmd<Page>('get_page')
-    if (!page || newPage.path !== page.path) {
+    let newPage = await runCmd<Page | null>('get_page')
+    if (!page || !newPage || newPage.path !== page.path) {
       page = newPage
     }
   }
 
   async function openFiles(paths: string[]) {
-    app = await runCmd<App>('open_files', { paths })
+    await runCmd<App>('open_files', { paths })
+    getApp()
   }
   async function openDialog() {
     let paths = await dialog.open({
@@ -47,8 +51,17 @@
   }
   async function show(index: number) {
     if (app.current_index !== index) {
-      app = await runCmd<App>('show', { index })
+      await runCmd<App>('show', { index })
+      getApp()
     }
+  }
+  async function close(index: number) {
+    if (app.files[index].dirty) {
+      let confirmed = await (window.confirm('Close without saving?') as any)
+      if (!confirmed) return
+    }
+    await runCmd('close_file', { index })
+    getApp()
   }
   async function filesKeydown(e: KeyboardEvent) {
     if (checkShortcut(e, 'ArrowUp')) {
@@ -63,6 +76,15 @@
       }
     }
   }
+  const unlistenFuture = event.listen('menu', ({ payload }) => {
+    if (payload === 'Open...') {
+      openDialog()
+    }
+  })
+  onDestroy(async () => {
+    const unlisten = await unlistenFuture
+    unlisten()
+  })
 </script>
 
 <main>
@@ -72,8 +94,17 @@
     </div>
     <div class="files" tabindex="0" on:keydown={filesKeydown}>
       {#each app.files as file, i}
-        <div class="row" class:selected={i === app.current_index} on:click={() => show(i)}
-          >{file.path.replace(/^.*[\\\/]/, '')}</div>
+        <div class="file" class:selected={i === app.current_index} on:click={() => show(i)}>
+          <div class="icon x" on:click|stopPropagation={() => close(i)}>x</div>
+          <div class="icon dirty">
+            {#if file.dirty}
+              <svg width="6" height="6" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="3" cy="3" r="2.5" />
+              </svg>
+            {/if}
+          </div>
+          {file.path.replace(/^.*[\\\/]/, '')}
+        </div>
       {/each}
     </div>
     <FileDrop
@@ -83,7 +114,7 @@
   </div>
   <div class="main">
     {#if page}
-      <PageView item={page} />
+      <PageView item={page} on:appRefresh={getApp} />
     {/if}
   </div>
 </main>
@@ -121,13 +152,31 @@
     overflow-y: auto
     height: 100%
     outline: none
-    .row
+    .file
+      display: flex
+      align-items: center
       padding: 7px 8px
+      padding-left: 0px
       cursor: default
-    .row:nth-child(2n)
+      .icon
+        display: flex
+        align-items: center
+        justify-content: center
+        width: 6px
+        margin-left: 6px
+        margin-right: 4px
+      .x
+        display: none
+      &:hover .x
+        display: block
+      &:hover .dirty
+        display: none
+      .dirty svg
+        fill: #ffffff
+    .file:nth-child(2n)
       background-color: rgba(#ffffff, 0.05)
-    .row.selected
+    .file.selected
       background-color: hsl(147, 0%, 35%)
-    &:focus .row.selected
+    &:focus .file.selected
       background-color: hsl(147, 70%, 30%)
 </style>
