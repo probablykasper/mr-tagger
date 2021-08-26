@@ -80,6 +80,8 @@
   const unlistenFuture = event.listen('menu', ({ payload }) => {
     if (payload === 'Open...') {
       openDialog()
+    } else if (payload === 'Close') {
+      close(app.current_index)
     }
   })
   onDestroy(async () => {
