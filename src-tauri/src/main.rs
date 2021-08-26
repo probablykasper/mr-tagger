@@ -3,8 +3,10 @@
   windows_subsystem = "windows"
 )]
 
-use tauri::api::shell;
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
+use crate::cmd::AppArg;
+use std::thread;
+use tauri::api::{dialog, shell};
+use tauri::{CustomMenuItem, Manager, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
 
 mod cmd;
 mod frames;
@@ -79,7 +81,7 @@ fn main() {
     .add_native_item(MenuItem::Copy);
 
   let ctx = tauri::generate_context!();
-  tauri::Builder::default()
+  let tauri_app = tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       cmd::error_popup,
       cmd::get_app,
@@ -101,8 +103,12 @@ fn main() {
         .inner_size(800.0, 550.0)
         .min_inner_size(400.0, 200.0)
         .skip_taskbar(false)
-        .fullscreen(false);
+        .fullscreen(false)
+        .visible(false);
       return (win, webview);
+    })
+    .on_page_load(|w, _payload| {
+      w.show().unwrap();
     })
     .manage(cmd::AppState(Default::default()))
     .menu(menu)
@@ -120,6 +126,36 @@ fn main() {
         _ => {}
       }
     })
-    .run(ctx)
+    .build(ctx)
     .expect("error while running tauri app");
+  tauri_app.run(|app_handle, e| match e {
+    tauri::Event::CloseRequested { label, api, .. } => {
+      if label == "main" {
+        let app: AppArg<'_> = app_handle.state();
+        let app = app.0.lock().unwrap();
+        for file in &app.files {
+          if file.dirty {
+            api.prevent_close();
+            let app_handle = app_handle.clone();
+            thread::spawn(move || {
+              let w = app_handle.get_window("main").unwrap();
+              dialog::ask(
+                Some(&w),
+                "You have unsaved changes. Close without saving?",
+                "",
+                move |res| {
+                  let w = app_handle.get_window("main").unwrap();
+                  if res == true {
+                    w.close().unwrap();
+                  }
+                },
+              );
+            });
+            break;
+          }
+        }
+      }
+    }
+    _ => {}
+  })
 }
