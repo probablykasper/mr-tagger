@@ -88,6 +88,7 @@ fn main() {
       cmd::get_page,
       cmd::get_image,
       cmd::remove_image,
+      cmd::replace_image,
     ])
     .create_window("main", WindowUrl::default(), |win, webview| {
       let win = win

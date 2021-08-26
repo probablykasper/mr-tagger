@@ -221,3 +221,57 @@ pub fn remove_image(index: usize, app: AppArg<'_>) -> Result<(), String> {
   }
   Ok(())
 }
+
+#[command]
+pub fn replace_image(index: usize, path: PathBuf, app: AppArg<'_>) -> Result<(), String> {
+  let mut app = app.0.lock().unwrap();
+  let file = app.current_file().unwrap();
+  let new_bytes = match fs::read(&path) {
+    Ok(b) => b,
+    Err(e) => throw!("Error reading that file: {}", e),
+  };
+  let ext = path.extension().unwrap_or_default().to_string_lossy();
+  file.dirty = true;
+  match file.metadata {
+    Metadata::Id3(ref mut tag) => {
+      let mut pic_frames: Vec<_> = tag
+        .frames()
+        .filter(|frame| frame.content().picture().is_some())
+        .map(|frame| frame.clone())
+        .collect();
+      let pic_frame = pic_frames.get_mut(index).unwrap();
+      let pic = pic_frame.content().picture().unwrap();
+      let new_pic = id3::frame::Picture {
+        mime_type: match ext.as_ref() {
+          "jpg" | "jpeg" => "image/jpeg".to_string(),
+          "png" => "image/png".to_string(),
+          ext => throw!("Unsupported file type: {}", ext),
+        },
+        picture_type: pic.picture_type,
+        description: pic.description.clone(),
+        data: new_bytes,
+      };
+      let new_frame = id3::Frame::with_content(pic_frame.id(), id3::Content::Picture(new_pic));
+      *pic_frame = new_frame;
+      tag.remove_all_pictures();
+      for pic_frame in pic_frames {
+        tag.add_frame(pic_frame);
+      }
+    }
+    Metadata::Mp4(ref mut tag) => {
+      let mut artworks: Vec<_> = tag.take_artworks().collect();
+      let artwork = artworks.get_mut(index).unwrap();
+      *artwork = mp4ameta::Img {
+        fmt: match ext.as_ref() {
+          "jpg" | "jpeg" => mp4ameta::ImgFmt::Jpeg,
+          "png" => mp4ameta::ImgFmt::Png,
+          "bmp" => mp4ameta::ImgFmt::Bmp,
+          ext => throw!("Unsupported file type: {}", ext),
+        },
+        data: new_bytes,
+      };
+      tag.set_artworks(artworks);
+    }
+  }
+  Ok(())
+}

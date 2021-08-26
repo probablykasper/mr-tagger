@@ -18,6 +18,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { runCmd } from '../scripts/helpers'
+  import { dialog } from '@tauri-apps/api'
 
   export let item: Page
   console.log(item)
@@ -36,6 +37,18 @@
     if (image) {
       await runCmd('remove_image', { index: image.index })
       getImage(null)
+      dispatch('appRefresh')
+    }
+  }
+  async function replaceArtwork() {
+    let path = await dialog.open({
+      filters: [{ name: 'Audio file', extensions: ['jpg', 'jpeg', 'png', 'bmp'] }],
+      multiple: false,
+      directory: false,
+    })
+    if (image && typeof path === 'string') {
+      await runCmd('replace_image', { index: image.index, path })
+      getImage(image.index)
       dispatch('appRefresh')
     }
   }
@@ -62,7 +75,10 @@
     {/if}
     {#if image}
       <div>{image.index + 1} of {image.total_images}, {image.mime_type}</div>
-      <div><button on:click={removeArtwork}>Remove</button></div>
+      <div>
+        <button on:click={removeArtwork}>Remove</button>
+        <button on:click={replaceArtwork}>Replace</button>
+      </div>
     {/if}
   </div>
   <div class="right">
