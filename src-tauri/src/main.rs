@@ -8,6 +8,7 @@ use tauri::{CustomMenuItem, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
 
 mod cmd;
 mod frames;
+mod image;
 
 #[macro_export]
 macro_rules! throw {
@@ -86,9 +87,9 @@ fn main() {
       cmd::close_file,
       cmd::show,
       cmd::get_page,
-      cmd::get_image,
-      cmd::remove_image,
-      cmd::replace_image,
+      image::get_image,
+      image::remove_image,
+      image::set_image,
     ])
     .create_window("main", WindowUrl::default(), |win, webview| {
       let win = win

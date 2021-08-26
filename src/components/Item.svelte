@@ -35,31 +35,30 @@
   }
 
   const dispatch = createEventDispatcher()
-  async function removeArtwork() {
+  async function removeImage() {
     if (image) {
       await runCmd('remove_image', { index: image.index })
       getImage(null)
       dispatch('appRefresh')
     }
   }
-  async function replaceArtwork() {
-    let path = await dialog.open({
-      filters: [{ name: 'Audio file', extensions: ['jpg', 'jpeg', 'png', 'bmp'] }],
-      multiple: false,
-      directory: false,
-    })
-    if (image && typeof path === 'string') {
-      await runCmd('replace_image', { index: image.index, path })
-      getImage(image.index)
-      dispatch('appRefresh')
+  async function setImage(path?: string) {
+    if (!path) {
+      let pathResult = await dialog.open({
+        filters: [{ name: 'Audio file', extensions: ['jpg', 'jpeg', 'png', 'bmp'] }],
+        multiple: false,
+        directory: false,
+      })
+      if (typeof pathResult === 'string') path = pathResult
     }
-  }
-  async function setArtwork(path: string) {
     if (image) {
-      await runCmd('replace_image', { index: image.index, path })
+      await runCmd('set_image', { index: image.index, path })
       getImage(image.index)
-      dispatch('appRefresh')
+    } else {
+      await runCmd('set_image', { index: 0, path })
+      getImage(0)
     }
+    dispatch('appRefresh')
   }
   let svgWidth = 0
 </script>
@@ -80,12 +79,12 @@
           </svg>
         </div>
       {/if}
-      <FileDrop fileExtensions={['jpeg', 'jpg', 'png', 'bmp']} handleOneFile={setArtwork} msg="" />
+      <FileDrop fileExtensions={['jpeg', 'jpg', 'png', 'bmp']} handleOneFile={setImage} msg="" />
     </div>
     {#if image}
       <div>
-        <button on:click={removeArtwork}>Remove</button>
-        <button on:click={replaceArtwork}>Replace</button>
+        <button on:click={removeImage}>Remove</button>
+        <button on:click={() => setImage()}>Replace</button>
       </div>
       <div>{image.index + 1} of {image.total_images}</div>
       <div>{image.mime_type}</div>
@@ -95,6 +94,10 @@
       {#if image.description}
         <div>Description: {image.description}</div>
       {/if}
+    {:else}
+      <div>
+        <button on:click={() => setImage()}>Add</button>
+      </div>
     {/if}
   </div>
   <div class="right">
