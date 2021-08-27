@@ -12,6 +12,7 @@
   }
   export type Page = {
     path: string
+    title: string
     frames: Frame[]
   }
   let x = 0 // to fix syntax highlighting
@@ -23,10 +24,10 @@
   import { dialog } from '@tauri-apps/api'
   import FileDrop from './FileDrop.svelte'
 
-  export let item: Page
+  export let page: Page
 
   let image: Image | null = null
-  $: if (item) {
+  $: if (page) {
     image = null
     getImage(null)
   }
@@ -60,6 +61,7 @@
     }
     dispatch('appRefresh')
   }
+  let showFrames = true
   let svgWidth = 0
 </script>
 
@@ -86,13 +88,13 @@
         <button on:click={removeImage}>Remove</button>
         <button on:click={() => setImage()}>Replace</button>
       </div>
-      <div>{image.index + 1} of {image.total_images}</div>
-      <div>{image.mime_type}</div>
+      <div class="text">{image.index + 1} of {image.total_images}</div>
+      <div class="text">{image.mime_type}</div>
       {#if image.picture_type}
-        <div>Type: {image.picture_type}</div>
+        <div class="text">Type: {image.picture_type}</div>
       {/if}
       {#if image.description}
-        <div>Description: {image.description}</div>
+        <div class="text">Description: {image.description}</div>
       {/if}
     {:else}
       <div>
@@ -101,30 +103,43 @@
     {/if}
   </div>
   <div class="right">
-    <div>{item.path}</div>
-    {#each item.frames as frame}
-      <div class="item">
-        {#if frame.Text}
-          <p>{frame.Text.id}: {frame.Text.value}</p>
-        {/if}
-      </div>
-    {/each}
+    <div class="row">
+      <span class="label">Path</span>
+      <span class="content">{page.path}</span>
+    </div>
+    <div class="row">
+      <span class="label">Title</span>
+      <span class="content">{page.title}</span>
+    </div>
+    <button class="toggle" tabindex="0" on:click={() => (showFrames = !showFrames)}
+      >{showFrames ? 'Hide tags' : 'Show tags'}</button>
+    <div class="frames">
+      {#if showFrames}
+        {#each page.frames as frame}
+          {#if frame.Text}
+            <div class="frame-label">{frame.Text.id}</div>
+            <div class="content">{frame.Text.value}</div>
+          {/if}
+        {/each}
+      {/if}
+    </div>
   </div>
 </main>
 
 <style lang="sass">
   main
     display: flex
-    margin: 12px
-    font-size: 14px
+    font-size: 13px
+    padding-bottom: 12px
+    padding-right: 12px
+  .text
+    user-select: auto
+    -webkit-user-select: auto
   .left
-    margin-right: 12px
     min-width: 160px
     width: calc(50% - 160px)
     max-width: 250px
-  .right
-    width: 0px
-    flex-grow: 1
+    padding-left: 12px
   img
     display: block
     width: 100%
@@ -139,4 +154,43 @@
   svg
     box-sizing: border-box
     fill: #45464a
+  .right
+    width: 0px
+    flex-grow: 1
+  .row
+    padding: 5px 0px
+    display: flex
+    align-items: baseline
+  .label
+    display: inline-block
+    width: 76px
+    flex-shrink: 0
+    text-align: right
+    margin-right: 8px
+    font-size: 12px
+    opacity: 0.7
+    cursor: default
+  .content
+    font-size: 13px
+    user-select: auto
+    -webkit-user-select: auto
+  button.toggle
+    font-size: 12px
+    background: transparent
+    padding-left: 0px
+    margin: 0px
+    margin-left: 20px
+    border: none
+    color: #3366ff
+    &:active
+      opacity: 0.8
+  .frames
+    padding-left: 20px
+    user-select: auto
+    -webkit-user-select: auto
+    .frame-label
+      font-size: 12px
+      opacity: 0.7
+      padding-top: 8px
+      // padding-bottom: 2px
 </style>

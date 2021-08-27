@@ -101,12 +101,8 @@ fn main() {
         .inner_size(800.0, 550.0)
         .min_inner_size(400.0, 200.0)
         .skip_taskbar(false)
-        .fullscreen(false)
-        .visible(false);
+        .fullscreen(false);
       return (win, webview);
-    })
-    .on_page_load(|w, _payload| {
-      w.show().unwrap();
     })
     .manage(cmd::AppState(Default::default()))
     .menu(menu)

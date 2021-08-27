@@ -1,4 +1,4 @@
-use crate::frames::{get_frames, Frame, Metadata};
+use crate::frames::{get_frames, Metadata};
 use crate::throw;
 use serde::Serialize;
 use serde_json::Value;
@@ -57,18 +57,19 @@ pub fn show(index: usize, app: AppArg<'_>) {
   app.current_index = index;
 }
 
-#[derive(Serialize)]
-pub struct Page {
-  path: PathBuf,
-  frames: Vec<Frame>,
-}
-
 #[command]
-pub fn get_page(app: AppArg<'_>) -> Option<Page> {
+pub fn get_page(app: AppArg<'_>) -> Option<Value> {
   let mut app = app.0.lock().unwrap();
   let file = app.current_file().ok()?;
-  Some(Page {
-    path: file.path.clone(),
-    frames: get_frames(&file.metadata),
-  })
+
+  let title = match file.metadata {
+    Metadata::Id3(ref tag) => tag.title(),
+    Metadata::Mp4(ref tag) => tag.title(),
+  };
+
+  Some(serde_json::json!({
+    "path": file.path.clone(),
+    "title": title,
+    "frames": get_frames(&file.metadata),
+  }))
 }

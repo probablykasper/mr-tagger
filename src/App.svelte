@@ -1,10 +1,11 @@
 <script lang="ts">
   import { dialog, event } from '@tauri-apps/api'
   import { checkShortcut, runCmd } from './scripts/helpers'
-  import PageView from './components/Item.svelte'
-  import type { Page } from './components/Item.svelte'
+  import PageView from './components/Page.svelte'
+  import type { Page } from './components/Page.svelte'
   import FileDrop from './components/FileDrop.svelte'
   import { onDestroy } from 'svelte'
+  import { fade } from 'svelte/transition'
 
   type File = {
     path: string
@@ -106,17 +107,17 @@
     <div class="files" tabindex="0" on:keydown={filesKeydown}>
       {#each app.files as file, i}
         <div class="file" class:selected={i === app.current_index} on:click={() => show(i)}>
-          <div class="icon x" on:click|stopPropagation={() => close(i)}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-              ><path
-                d="M23.954 21.03l-9.184-9.095 9.092-9.174-2.832-2.807-9.09 9.179-9.176-9.088-2.81 2.81 9.186 9.105-9.095 9.184 2.81 2.81 9.112-9.192 9.18 9.1z" /></svg>
-          </div>
           <div class="icon dirty">
             {#if file.dirty}
               <svg width="6" height="6" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="3" cy="3" r="2.5" />
               </svg>
             {/if}
+          </div>
+          <div class="icon x" on:click|stopPropagation={() => close(i)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+              ><path
+                d="M23.954 21.03l-9.184-9.095 9.092-9.174-2.832-2.807-9.09 9.179-9.176-9.088-2.81 2.81 9.186 9.105-9.095 9.184 2.81 2.81 9.112-9.192 9.18 9.1z" /></svg>
           </div>
           {file.path.replace(/^.*[\\\/]/, '')}
         </div>
@@ -126,8 +127,8 @@
   </div>
   <div class="main">
     {#if page}
-      <button on:click={() => saveFile(false)}>Save</button>
-      <PageView item={page} on:appRefresh={getApp} />
+      <button on:click={() => saveFile(false)} tabindex="0">Save</button>
+      <PageView {page} on:appRefresh={getApp} />
     {/if}
   </div>
 </main>
@@ -150,7 +151,6 @@
     width: 0px
     overflow: auto
   .sidebar
-    position: relative
     display: flex
     flex-direction: column
     width: 250px
@@ -168,7 +168,7 @@
     .file
       display: flex
       align-items: center
-      padding: 7px 8px
+      padding: 6px 8px
       padding-left: 0px
       cursor: default
       .icon
@@ -179,25 +179,29 @@
         height: 8px
         flex-shrink: 0
         padding: 3px
-        margin-right: 3px
-        margin-left: 5px
+        margin: 0px 5px
         border-radius: 2px
+        transition: opacity 100ms ease-out, transform 100ms ease-out
         &:hover
           background-color: rgba(#ffffff, 0.15)
-      .x
-        display: none
-      &:hover .x
+      .icon.x
+        opacity: 0
+        transform: scale(0.5)
+        position: absolute
+      &:hover .icon.x
         display: flex
-      &:hover .dirty
-        display: none
+        opacity: 1
+        transform: scale(1)
+      &:hover .icon.dirty
+        opacity: 0
+        transform: scale(0.5)
       svg
         fill: #ffffff
-        // width: 6px
-        // height: 6px
     .file:nth-child(2n)
       background-color: rgba(#ffffff, 0.05)
     .file.selected
       background-color: hsl(147, 0%, 35%)
     &:focus .file.selected
       background-color: hsl(147, 70%, 30%)
+      background-color: #103fcb
 </style>
