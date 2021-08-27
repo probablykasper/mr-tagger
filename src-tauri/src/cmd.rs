@@ -57,19 +57,143 @@ pub fn show(index: usize, app: AppArg<'_>) {
   app.current_index = index;
 }
 
+fn id3_split<'a>(s: Option<&'a str>) -> Vec<&'a str> {
+  match s {
+    Some(s) => s.split('\u{0}').collect(),
+    None => vec![],
+  }
+}
+
+fn get_frame_text<'a>(tag: &'a id3::Tag, id: &str) -> Option<&'a str> {
+  let frame = tag.get(id)?;
+  let text = frame.content().text()?;
+  return Some(text);
+}
+
+fn opt_to_str<'a>(n: Option<impl ToString>) -> String {
+  match n {
+    Some(n) => n.to_string(),
+    None => "".to_string(),
+  }
+}
+
 #[command]
 pub fn get_page(app: AppArg<'_>) -> Option<Value> {
   let mut app = app.0.lock().unwrap();
   let file = app.current_file().ok()?;
 
   let title = match file.metadata {
-    Metadata::Id3(ref tag) => tag.title(),
-    Metadata::Mp4(ref tag) => tag.title(),
+    Metadata::Id3(ref tag) => tag.title().unwrap_or(""),
+    Metadata::Mp4(ref tag) => tag.title().unwrap_or(""),
+  };
+
+  let artists: Vec<_> = match file.metadata {
+    Metadata::Id3(ref tag) => id3_split(tag.artist()),
+    Metadata::Mp4(ref tag) => tag.artists().collect(),
+  };
+
+  let album = match file.metadata {
+    Metadata::Id3(ref tag) => tag.album().unwrap_or(""),
+    Metadata::Mp4(ref tag) => tag.album().unwrap_or(""),
+  };
+
+  let album_artists: Vec<_> = match file.metadata {
+    Metadata::Id3(ref tag) => id3_split(tag.album_artist()),
+    Metadata::Mp4(ref tag) => tag.album_artists().collect(),
+  };
+
+  let composer = match file.metadata {
+    Metadata::Id3(ref tag) => id3_split(get_frame_text(&tag, "TCOM")),
+    Metadata::Mp4(ref tag) => tag.composers().collect(),
+  };
+
+  let groupings = match file.metadata {
+    // non-standard iTunes tag, three-byte ID3v2.2 tag is not remapped
+    Metadata::Id3(ref tag) => id3_split(match get_frame_text(&tag, "GRP1") {
+      Some(s) => Some(s),
+      None => get_frame_text(&tag, "GP1"),
+    }),
+    Metadata::Mp4(ref tag) => tag.groupings().collect(),
+  };
+
+  let genres = match file.metadata {
+    Metadata::Id3(ref tag) => id3_split(tag.genre()),
+    Metadata::Mp4(ref tag) => tag.genres().collect(),
+  };
+
+  let track_num = match file.metadata {
+    Metadata::Id3(ref tag) => opt_to_str(tag.track()),
+    Metadata::Mp4(ref tag) => opt_to_str(tag.track().0),
+  };
+  let track_total = match file.metadata {
+    Metadata::Id3(ref tag) => opt_to_str(tag.total_tracks()),
+    Metadata::Mp4(ref tag) => opt_to_str(tag.track().1),
+  };
+
+  let disc_num = match file.metadata {
+    Metadata::Id3(ref tag) => opt_to_str(tag.disc()),
+    Metadata::Mp4(ref tag) => opt_to_str(tag.disc().0),
+  };
+  let disc_total = match file.metadata {
+    Metadata::Id3(ref tag) => opt_to_str(tag.total_discs()),
+    Metadata::Mp4(ref tag) => opt_to_str(tag.disc().1),
+  };
+
+  let compilation = match file.metadata {
+    Metadata::Id3(ref tag) => {
+      // non-standard iTunes tag, three-byte ID3v2.2 tag is not remapped
+      get_frame_text(&tag, "TCMP") == Some("1") || get_frame_text(&tag, "TCP") == Some("1")
+    }
+    Metadata::Mp4(ref tag) => tag.compilation(),
+  };
+
+  let bpm = match file.metadata {
+    Metadata::Id3(ref tag) => get_frame_text(&tag, "TBMP").unwrap_or("").to_string(),
+    Metadata::Mp4(ref tag) => opt_to_str(tag.bpm()),
+  };
+
+  #[derive(Serialize)]
+  struct Comment {
+    text: String,
+    lang: Option<String>,
+    description: Option<String>,
+  }
+  let comments: Vec<Comment> = match file.metadata {
+    Metadata::Id3(ref tag) => tag
+      .comments()
+      .map(|c| Comment {
+        text: c.text.clone(),
+        lang: Some(c.lang.clone()),
+        description: Some(c.description.clone()),
+      })
+      .collect(),
+    Metadata::Mp4(ref tag) => tag
+      .comments()
+      .map(|c| Comment {
+        text: c.to_string(),
+        lang: None,
+        description: None,
+      })
+      .collect(),
   };
 
   Some(serde_json::json!({
     "path": file.path.clone(),
     "title": title,
+    "artists": artists,
+    "album": album,
+    "album_artists": album_artists,
+    "composer": composer,
+    "groupings": groupings,
+    "genres": genres,
+    // year
+    "track_num": track_num,
+    "track_total": track_total,
+    "disc_num": disc_num,
+    "disc_total": disc_total,
+    "compilation": compilation,
+    "bpm": bpm,
+    "comments": comments,
     "frames": get_frames(&file.metadata),
   }))
 }

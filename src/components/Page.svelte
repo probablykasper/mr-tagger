@@ -10,9 +10,27 @@
     description: string | null
     picture_type: string | null
   }
+  export type Comment = {
+    lang: string | null
+    description: string | null
+    text: string
+  }
   export type Page = {
     path: string
     title: string
+    artists: string[]
+    album: string
+    album_artists: string[]
+    composer: string[]
+    groupings: string[]
+    genres: string[]
+    track_num: number
+    track_total: number
+    disc_num: number
+    disc_total: number
+    compilation: boolean
+    bpm: string
+    comments: Comment[]
     frames: Frame[]
   }
   let x = 0 // to fix syntax highlighting
@@ -23,6 +41,7 @@
   import { runCmd } from '../scripts/helpers'
   import { dialog } from '@tauri-apps/api'
   import FileDrop from './FileDrop.svelte'
+  import MultiField from './MultiField.svelte'
 
   export let page: Page
 
@@ -111,6 +130,67 @@
       <span class="label">Title</span>
       <span class="content">{page.title}</span>
     </div>
+    <div class="row">
+      <span class="label">Artist</span>
+      <MultiField value={page.artists} />
+    </div>
+    <div class="row">
+      <span class="label">Album</span>
+      <span class="content">{page.album}</span>
+    </div>
+    <div class="row">
+      <span class="label">Album artist</span>
+      <MultiField value={page.album_artists} />
+    </div>
+    <div class="row">
+      <span class="label">Composer</span>
+      <MultiField value={page.composer} />
+    </div>
+    <div class="row">
+      <span class="label">Grouping</span>
+      <MultiField value={page.groupings} />
+    </div>
+    <div class="row">
+      <span class="label">Genre</span>
+      <MultiField value={page.genres} />
+    </div>
+    <div class="row">
+      <span class="label">Track</span>
+      <div class="content">{page.track_num || '_'} of {page.track_num || '_'}</div>
+    </div>
+    <div class="row">
+      <span class="label">Disc number</span>
+      <div class="content">{page.disc_num || '_'} of {page.disc_num || '_'}</div>
+    </div>
+    <div class="row">
+      <span class="label">Compilation</span>
+      <div class="content">{page.compilation ? 'Yes' : 'No'}</div>
+    </div>
+    <div class="row">
+      <span class="label">BPM</span>
+      <div class="content">{page.bpm}</div>
+    </div>
+    <div class="row">
+      <span class="label">Comments</span>
+      <div>
+        {#each page.comments as comment}
+          <div class="content comment">
+            {#if comment.lang !== null}
+              <br />
+              <br />
+              Lang: {comment.lang}
+              <br />
+            {/if}
+            {#if comment.description !== null}
+              Description: {comment.description}
+              <br />
+              <br />
+            {/if}
+            {comment.text}
+          </div>
+        {/each}
+      </div>
+    </div>
     <button class="toggle" tabindex="0" on:click={() => (showFrames = !showFrames)}
       >{showFrames ? 'Hide tags' : 'Show tags'}</button>
     <div class="frames">
@@ -161,6 +241,14 @@
     padding: 5px 0px
     display: flex
     align-items: baseline
+    .content
+      display: contents // safari selection fix
+  .content
+    font-size: 13px
+    user-select: auto
+    -webkit-user-select: auto
+  .comment
+    display: block
   .label
     display: inline-block
     width: 76px
@@ -170,27 +258,22 @@
     font-size: 12px
     opacity: 0.7
     cursor: default
-  .content
-    font-size: 13px
-    user-select: auto
-    -webkit-user-select: auto
   button.toggle
     font-size: 12px
     background: transparent
     padding-left: 0px
     margin: 0px
-    margin-left: 20px
+    margin-left: 12px
     border: none
     color: #3366ff
     &:active
       opacity: 0.8
   .frames
-    padding-left: 20px
+    padding-left: 12px
     user-select: auto
     -webkit-user-select: auto
     .frame-label
       font-size: 12px
       opacity: 0.7
       padding-top: 8px
-      // padding-bottom: 2px
 </style>

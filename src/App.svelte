@@ -5,7 +5,6 @@
   import type { Page } from './components/Page.svelte'
   import FileDrop from './components/FileDrop.svelte'
   import { onDestroy } from 'svelte'
-  import { fade } from 'svelte/transition'
 
   type File = {
     path: string
@@ -152,6 +151,7 @@
     overflow: auto
   .sidebar
     display: flex
+    position: relative
     flex-direction: column
     width: 250px
     height: 100%
@@ -178,10 +178,10 @@
         width: 8px
         height: 8px
         flex-shrink: 0
-        padding: 3px
+        padding: 4px
         margin: 0px 5px
         border-radius: 2px
-        transition: opacity 100ms ease-out, transform 100ms ease-out
+        transition: opacity 180ms ease-out, transform 180ms ease-out
         &:hover
           background-color: rgba(#ffffff, 0.15)
       .icon.x
