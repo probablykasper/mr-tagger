@@ -1,6 +1,8 @@
 # Mr Tagger
 
-Music file tagger
+Music file tagger. For now only allows setting/replacing cover artworks.
+
+![Screenshot](.github/screenshot.png)
 
 ## Dev instructions
 

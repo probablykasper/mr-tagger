@@ -123,7 +123,7 @@ pub fn set_image(index: usize, path: PathBuf, app: AppArg<'_>) -> Result<(), Str
       };
       let mut new_pic = id3::frame::Picture {
         mime_type,
-        picture_type: id3::frame::PictureType::CoverFront,
+        picture_type: id3::frame::PictureType::Other,
         description: "".to_string(),
         data: new_bytes,
       };

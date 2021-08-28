@@ -80,7 +80,7 @@
     }
     dispatch('appRefresh')
   }
-  let showFrames = true
+  let showFrames = false
   let svgWidth = 0
 </script>
 
@@ -176,8 +176,6 @@
         {#each page.comments as comment}
           <div class="content comment">
             {#if comment.lang !== null}
-              <br />
-              <br />
               Lang: {comment.lang}
               <br />
             {/if}
@@ -187,6 +185,8 @@
               <br />
             {/if}
             {comment.text}
+            <br />
+            <br />
           </div>
         {/each}
       </div>
@@ -251,7 +251,7 @@
     display: block
   .label
     display: inline-block
-    width: 76px
+    width: 80px
     flex-shrink: 0
     text-align: right
     margin-right: 8px
