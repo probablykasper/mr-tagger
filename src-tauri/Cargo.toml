@@ -13,7 +13,8 @@ tauri-build = { version = "1.0.0-beta.4" }
 serde_json = "1.0"
 backtrace = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.0.0-beta.8", features = ["dialog-open", "dialog-save", "shell-open"] }
+# tauri = { version = "1.0.0-beta.8", features = ["dialog-open", "dialog-save", "shell-open"] }
+tauri = { git = "https://github.com/tauri-apps/tauri", rev = "9c9dead", features = ["dialog-open", "dialog-save", "shell-open"] }
 id3 = "0.6.4"
 mp4ameta = "0.11.0"
 base64 = "0.13.0"
