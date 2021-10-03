@@ -81,11 +81,15 @@
       }
     }
   }
-  const unlistenFuture = event.listen('menu', ({ payload }) => {
+  const unlistenFuture = event.listen('menu', async ({ payload }) => {
     if (payload === 'Open...') {
       openDialog()
     } else if (payload === 'Close') {
-      close(app.current_index)
+      if (app.files.length === 0) {
+        await runCmd('close_window')
+      } else {
+        close(app.current_index)
+      }
     } else if (payload === 'Save') {
       saveFile(false)
     } else if (payload === 'Save As...') {

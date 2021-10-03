@@ -57,6 +57,11 @@ pub fn show(index: usize, app: AppArg<'_>) {
   app.current_index = index;
 }
 
+#[command]
+pub fn close_window(win: tauri::Window) {
+  let _ = win.close();
+}
+
 fn id3_split<'a>(s: Option<&'a str>) -> Vec<&'a str> {
   match s {
     Some(s) => s.split('\u{0}').collect(),

@@ -83,6 +83,7 @@ fn main() {
       cmd::error_popup,
       cmd::get_app,
       cmd::show,
+      cmd::close_window,
       cmd::get_page,
       files::open_files,
       files::close_file,
