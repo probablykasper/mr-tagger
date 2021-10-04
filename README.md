@@ -1,7 +1,7 @@
 # Mr Tagger
 
 <div>
-  <img src="assets/Logo%201024.png" align="right" alt="Size Limit logo by Anton Lovchikov" width="80" height="80">
+  <img src="assets/Logo%201024.png" align="right" width="80" height="80">
 </div>
 
 Music file tagger. For now, it can only edit cover artworks.
