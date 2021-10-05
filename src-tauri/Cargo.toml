@@ -1,6 +1,6 @@
 [package]
 name = "mr-tagger"
-version = "0.1.1"
+version = "0.1.2"
 description = "Spotlight alternative"
 default-run = "mr-tagger"
 edition = "2018"
