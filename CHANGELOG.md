@@ -1,3 +1,6 @@
+## 0.1.3 - 2021 Oct 13
+- Add support for macOS 10.13 High Sierra
+
 ## 0.1.2 - 2021 Oct 5
 - Fix support for macOS Catalina
 
