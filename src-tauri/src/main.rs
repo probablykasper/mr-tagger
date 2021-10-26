@@ -4,6 +4,7 @@
 )]
 
 use crate::cmd::AppArg;
+use crate::menu::AddDefaultSubmenus;
 use std::thread;
 use tauri::api::{dialog, shell};
 use tauri::{CustomMenuItem, Manager, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
@@ -12,6 +13,7 @@ mod cmd;
 mod files;
 mod frames;
 mod image;
+mod menu;
 
 #[macro_export]
 macro_rules! throw {
@@ -20,63 +22,12 @@ macro_rules! throw {
   }};
 }
 
-fn main() {
-  fn custom_menu(name: &str) -> CustomMenuItem {
-    let c = CustomMenuItem::new(name.to_string(), name);
-    return c;
-  }
-  let menu = Menu::new()
-    .add_submenu(Submenu::new(
-      // on macOS first menu is always app name
-      "Mr Tagger",
-      Menu::new()
-        .add_native_item(MenuItem::About("Mr Tagger".to_string()))
-        .add_native_item(MenuItem::Separator)
-        .add_native_item(MenuItem::Services)
-        .add_native_item(MenuItem::Separator)
-        .add_native_item(MenuItem::Hide)
-        .add_native_item(MenuItem::HideOthers)
-        .add_native_item(MenuItem::ShowAll)
-        .add_native_item(MenuItem::Separator)
-        .add_native_item(MenuItem::Quit),
-    ))
-    .add_submenu(Submenu::new(
-      "File",
-      Menu::new()
-        .add_item(custom_menu("Open...").accelerator("cmdOrControl+O"))
-        .add_native_item(MenuItem::Separator)
-        .add_item(custom_menu("Close").accelerator("cmdOrControl+W"))
-        .add_item(custom_menu("Save").accelerator("cmdOrControl+S"))
-        .add_item(custom_menu("Save As...").accelerator("shift+cmdOrControl+S")),
-    ))
-    .add_submenu(Submenu::new("Edit", {
-      let mut menu = Menu::new();
-      menu = menu.add_native_item(MenuItem::Undo);
-      menu = menu.add_native_item(MenuItem::Redo);
-      menu = menu.add_native_item(MenuItem::Separator);
-      menu = menu.add_native_item(MenuItem::Cut);
-      menu = menu.add_native_item(MenuItem::Copy);
-      menu = menu.add_native_item(MenuItem::Paste);
-      #[cfg(not(target_os = "macos"))]
-      {
-        menu = menu.add_native_item(MenuItem::Separator);
-      }
-      menu = menu.add_native_item(MenuItem::SelectAll);
-      menu
-    }))
-    .add_submenu(Submenu::new("View", Menu::new()))
-    .add_submenu(Submenu::new(
-      "Window",
-      Menu::new()
-        .add_native_item(MenuItem::Minimize)
-        .add_native_item(MenuItem::Zoom),
-    ))
-    .add_submenu(Submenu::new(
-      "Help",
-      Menu::new().add_item(custom_menu("Learn More")),
-    ))
-    .add_native_item(MenuItem::Copy);
+fn custom_item(name: &str) -> CustomMenuItem {
+  let c = CustomMenuItem::new(name.to_string(), name);
+  return c;
+}
 
+fn main() {
   let ctx = tauri::generate_context!();
   let tauri_app = tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
@@ -106,7 +57,26 @@ fn main() {
       return (win, webview);
     })
     .manage(cmd::AppState(Default::default()))
-    .menu(menu)
+    .menu(
+      Menu::new()
+        .add_default_app_submenu(&ctx.package_info().name)
+        .add_submenu(Submenu::new(
+          "File",
+          Menu::new()
+            .add_item(custom_item("Open...").accelerator("cmdOrControl+O"))
+            .add_native_item(MenuItem::Separator)
+            .add_item(custom_item("Close").accelerator("cmdOrControl+W"))
+            .add_item(custom_item("Save").accelerator("cmdOrControl+S"))
+            .add_item(custom_item("Save As...").accelerator("shift+cmdOrControl+S")),
+        ))
+        .add_default_edit_submenu()
+        .add_default_view_submenu()
+        .add_default_window_submenu()
+        .add_submenu(Submenu::new(
+          "Help",
+          Menu::new().add_item(custom_item("Learn More")),
+        )),
+    )
     .on_menu_event(|event| {
       let event_name = event.menu_item_id();
       event.window().emit("menu", event_name).unwrap();
