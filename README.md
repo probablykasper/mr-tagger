@@ -1,12 +1,15 @@
-# Mr Tagger
+<p align="center">
+  <img src="./assets/Logo 1024.png" width="80">
+</p>
+<p align="center">
+  <a href="https://github.com/probablykasper/mr-tagger/releases"><b>Download for Mac, Windows or Linux</b></a>
+</p>
 
-<div>
-  <img src="assets/Logo%201024.png" align="right" width="80" height="80">
-</div>
+# Mr Tagger
 
 Music file tagger. For now, it can only edit cover artworks.
 
-Supported file formats
+Supported file formats:
 - aiff
 - mp3
 - m4a / mp4 / m4p / m4b / m4r / m4v
