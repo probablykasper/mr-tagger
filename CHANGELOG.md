@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.4 - 2021 Dec 13
+- Update logo style
 - Fix incorrect track total being shown
 
 ## 0.1.3 - 2021 Oct 13
