@@ -156,7 +156,7 @@
     </div>
     <div class="row">
       <span class="label">Track</span>
-      <div class="content">{page.track_num || '_'} of {page.track_num || '_'}</div>
+      <div class="content">{page.track_num || '_'} of {page.track_total || '_'}</div>
     </div>
     <div class="row">
       <span class="label">Disc number</span>
