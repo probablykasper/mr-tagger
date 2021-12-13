@@ -7,8 +7,10 @@
     "build": "tauri build",
     "build:web": "vite build",
     "preview": "vite preview",
-    "lint": "prettier --check *.js *.json src",
-    "format": "prettier --write *.js *.json src"
+    "test": "cargo test --manifest-path ./src-tauri/Cargo.toml",
+    "check": "svelte-check",
+    "lint": "prettier --check *.js src",
+    "format": "prettier --write *.js src"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "1.0.0-next.19",
@@ -18,6 +20,7 @@
     "prettier-plugin-svelte": "^2.3.1",
     "sass": "^1.38.1",
     "svelte": "^3.42.3",
+    "svelte-check": "^2.2.10",
     "svelte-preprocess": "^4.8.0",
     "typescript": "^4.3.5",
     "vite": "^2.5.1"
