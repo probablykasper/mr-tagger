@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.6 - 2021 Dec 14
+- Fix BPM not showing
+
 ## 0.1.5 - 2021 Dec 14
 - Fix incorrect disc total being shown
 

@@ -153,7 +153,7 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
   };
 
   let bpm = match file.metadata {
-    Metadata::Id3(ref tag) => get_frame_text(&tag, "TBMP").unwrap_or("").to_string(),
+    Metadata::Id3(ref tag) => get_frame_text(&tag, "TBPM").unwrap_or("").to_string(),
     Metadata::Mp4(ref tag) => opt_to_str(tag.bpm()),
   };
 
