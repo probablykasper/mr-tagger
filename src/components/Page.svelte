@@ -160,7 +160,7 @@
     </div>
     <div class="row">
       <span class="label">Disc number</span>
-      <div class="content">{page.disc_num || '_'} of {page.disc_num || '_'}</div>
+      <div class="content">{page.disc_num || '_'} of {page.disc_total || '_'}</div>
     </div>
     <div class="row">
       <span class="label">Compilation</span>
