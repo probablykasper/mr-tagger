@@ -36,5 +36,5 @@ Supported file formats:
     ```
     cargo check --manifest-path src-tauri/Cargo.toml
     ```
-4. Dispatch the GitHub Release workflow and wait
+4. Commit with a tag in the format `v#.#.#`
 5. Add release notes to the generated GitHub release and publish it

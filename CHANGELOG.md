@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.5 - 2021 Dec 14
+- Fix incorrect disc total being shown
+
 ## 0.1.4 - 2021 Dec 13
 - Update logo style
 - Fix incorrect track total being shown
