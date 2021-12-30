@@ -4,27 +4,22 @@
 )]
 
 use crate::cmd::AppArg;
-use crate::menu::AddDefaultSubmenus;
 use std::thread;
 use tauri::api::{dialog, shell};
-use tauri::{CustomMenuItem, Manager, Menu, MenuItem, Submenu, WindowBuilder, WindowUrl};
+use tauri::{
+  CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu, WindowBuilder, WindowUrl,
+};
 
 mod cmd;
 mod files;
 mod frames;
 mod image;
-mod menu;
 
 #[macro_export]
 macro_rules! throw {
   ($($arg:tt)*) => {{
     return Err(format!($($arg)*))
   }};
-}
-
-fn custom_item(name: &str) -> CustomMenuItem {
-  let c = CustomMenuItem::new(name.to_string(), name);
-  return c;
 }
 
 fn main() {
@@ -57,26 +52,68 @@ fn main() {
       return (win, webview);
     })
     .manage(cmd::AppState(Default::default()))
-    .menu(
-      Menu::new()
-        .add_default_app_submenu(&ctx.package_info().name)
-        .add_submenu(Submenu::new(
-          "File",
-          Menu::new()
-            .add_item(custom_item("Open...").accelerator("cmdOrControl+O"))
-            .add_native_item(MenuItem::Separator)
-            .add_item(custom_item("Close").accelerator("cmdOrControl+W"))
-            .add_item(custom_item("Save").accelerator("cmdOrControl+S"))
-            .add_item(custom_item("Save As...").accelerator("shift+cmdOrControl+S")),
-        ))
-        .add_default_edit_submenu()
-        .add_default_view_submenu()
-        .add_default_window_submenu()
-        .add_submenu(Submenu::new(
-          "Help",
-          Menu::new().add_item(custom_item("Learn More")),
-        )),
-    )
+    .menu(Menu::with_items([
+      MenuEntry::Submenu(Submenu::new(
+        &ctx.package_info().name,
+        Menu::with_items([
+          MenuItem::About(ctx.package_info().name.clone()).into(),
+          MenuItem::Separator.into(),
+          MenuItem::Services.into(),
+          MenuItem::Separator.into(),
+          MenuItem::Hide.into(),
+          MenuItem::HideOthers.into(),
+          MenuItem::ShowAll.into(),
+          MenuItem::Separator.into(),
+          MenuItem::Quit.into(),
+        ]),
+      )),
+      MenuEntry::Submenu(Submenu::new(
+        "File",
+        Menu::with_items([
+          CustomMenuItem::new("Open...", "Open...")
+            .accelerator("cmdOrControl+O")
+            .into(),
+          MenuItem::Separator.into(),
+          CustomMenuItem::new("Close", "Close")
+            .accelerator("cmdOrControl+W")
+            .into(),
+          CustomMenuItem::new("Save", "Save")
+            .accelerator("cmdOrControl+S")
+            .into(),
+          CustomMenuItem::new("Save As...", "Save As...")
+            .accelerator("shift+cmdOrControl+S")
+            .into(),
+        ]),
+      )),
+      MenuEntry::Submenu(Submenu::new(
+        "Edit",
+        Menu::with_items([
+          MenuItem::Undo.into(),
+          MenuItem::Redo.into(),
+          MenuItem::Separator.into(),
+          MenuItem::Cut.into(),
+          MenuItem::Copy.into(),
+          MenuItem::Paste.into(),
+          #[cfg(not(target_os = "macos"))]
+          MenuItem::Separator.into(),
+          MenuItem::SelectAll.into(),
+        ]),
+      )),
+      MenuEntry::Submenu(Submenu::new(
+        "View",
+        Menu::with_items([MenuItem::EnterFullScreen.into()]),
+      )),
+      MenuEntry::Submenu(Submenu::new(
+        "Window",
+        Menu::with_items([MenuItem::Minimize.into(), MenuItem::Zoom.into()]),
+      )),
+      // You should always have a Help menu on macOS because it will automatically
+      // show a menu search field
+      MenuEntry::Submenu(Submenu::new(
+        "Help",
+        Menu::with_items([CustomMenuItem::new("Learn More", "Learn More").into()]),
+      )),
+    ]))
     .on_menu_event(|event| {
       let event_name = event.menu_item_id();
       event.window().emit("menu", event_name).unwrap();
