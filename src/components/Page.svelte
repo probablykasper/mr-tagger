@@ -33,7 +33,6 @@
     comments: Comment[]
     frames: Frame[]
   }
-  let x = 0 // to fix syntax highlighting
 </script>
 
 <script lang="ts">
