@@ -3,8 +3,9 @@
   import { checkShortcut, runCmd } from './scripts/helpers'
   import PageView from './components/Page.svelte'
   import type { Page } from './components/Page.svelte'
-  import FileDrop from './components/FileDrop.svelte'
   import { onDestroy } from 'svelte'
+  import FileDrop from 'svelte-tauri-filedrop'
+  import { fade } from 'svelte/transition'
 
   type File = {
     path: string
@@ -126,7 +127,11 @@
         </div>
       {/each}
     </div>
-    <FileDrop fileExtensions={extensions} handleFiles={openFiles} msg="" />
+    <FileDrop {extensions} handleFiles={openFiles} let:files>
+      {#if files.length > 0}
+        <div class="dropzone" transition:fade={{ duration: 100 }} />
+      {/if}
+    </FileDrop>
   </div>
   <div class="main">
     {#if page}
@@ -208,4 +213,11 @@
     &:focus .file.selected
       background-color: hsl(147, 70%, 30%)
       background-color: #103fcb
+  .dropzone
+    position: absolute
+    width: 100%
+    height: 100%
+    top: 0px
+    left: 0px
+    background-color: rgba(#ffffff, 0.2)
 </style>

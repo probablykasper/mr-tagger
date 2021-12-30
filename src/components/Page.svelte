@@ -40,8 +40,9 @@
   import { createEventDispatcher } from 'svelte'
   import { runCmd } from '../scripts/helpers'
   import { dialog } from '@tauri-apps/api'
-  import FileDrop from './FileDrop.svelte'
+  import FileDrop from 'svelte-tauri-filedrop'
   import MultiField from './MultiField.svelte'
+  import { fade } from 'svelte/transition'
 
   export let page: Page
 
@@ -100,7 +101,11 @@
           </svg>
         </div>
       {/if}
-      <FileDrop fileExtensions={['jpeg', 'jpg', 'png', 'bmp']} handleOneFile={setImage} msg="" />
+      <FileDrop extensions={['jpeg', 'jpg', 'png', 'bmp']} handleOneFile={setImage} let:files>
+        {#if files.length > 0}
+          <div class="dropzone" transition:fade={{ duration: 100 }} />
+        {/if}
+      </FileDrop>
     </div>
     {#if image}
       <div>
@@ -276,4 +281,11 @@
       font-size: 12px
       opacity: 0.7
       padding-top: 8px
+  .dropzone
+    position: absolute
+    width: 100%
+    height: 100%
+    top: 0px
+    left: 0px
+    background-color: rgba(#ffffff, 0.2)
 </style>
