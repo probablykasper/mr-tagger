@@ -8,9 +8,8 @@
     "build:web": "vite build",
     "preview": "vite preview",
     "test": "cargo test --manifest-path ./src-tauri/Cargo.toml",
-    "check": "svelte-check",
-    "lint": "prettier --check *.js src",
-    "format": "prettier --write *.js src"
+    "format": "prettier --write *.js src",
+    "check": "eslint src *.js && svelte-check && cargo check --manifest-path src-tauri/Cargo.toml"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "1.0.0-next.19",
