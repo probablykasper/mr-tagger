@@ -19,6 +19,8 @@ Supported file formats:
 
 ## Dev instructions
 
+### Get started
+
 1. Install Node.js
 2. Install Rust
 3. Follow the [Tauri setup guide](https://tauri.studio/en/docs/getting-started/intro)
