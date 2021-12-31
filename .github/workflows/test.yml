@@ -5,6 +5,9 @@ on:
       - '*'
     tags-ignore:
       - '*'
+  pull_request:
+    branches:
+      - '*'
   workflow_dispatch:
 
 env:
@@ -37,11 +40,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y webkit2gtk-4.0
 
+      - name: Rust cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - run: npm install
 
-      - run: npm run check
-
       - run: npm run build:web
+
+      - run: npm run check
 
       - run: npm run test
 
