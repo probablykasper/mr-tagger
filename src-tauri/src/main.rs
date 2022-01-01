@@ -53,6 +53,7 @@ fn main() {
     })
     .manage(cmd::AppState(Default::default()))
     .menu(Menu::with_items([
+      #[cfg(target_os = "macos")]
       MenuEntry::Submenu(Submenu::new(
         &ctx.package_info().name,
         Menu::with_items([
