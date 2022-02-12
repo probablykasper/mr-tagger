@@ -1,5 +1,6 @@
 use crate::frames::{get_frames, Metadata};
 use crate::throw;
+use id3::TagLike;
 use serde::Serialize;
 use serde_json::Value;
 use std::path::PathBuf;

@@ -2,6 +2,7 @@ use crate::cmd::AppArg;
 use crate::frames::Metadata;
 use crate::throw;
 use base64;
+use id3::TagLike;
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;

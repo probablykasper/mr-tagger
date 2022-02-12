@@ -40,6 +40,14 @@ fn get_id3_frames(tag: &id3::Tag) -> Vec<Frame> {
       id3::Content::EncapsulatedObject(_) => {}
       // !TODO
       id3::Content::Unknown(_) => {}
+      // !TODO
+      id3::Content::Popularimeter(_) => {}
+      // !TODO
+      id3::Content::Chapter(_) => {}
+      // !TODO
+      id3::Content::MpegLocationLookupTable(_) => {}
+
+      _ => {}
     }
   }
   frames
