@@ -4,10 +4,12 @@
 )]
 
 use crate::cmd::AppArg;
+use std::collections::HashMap;
 use std::thread;
 use tauri::api::{dialog, shell};
+use tauri::regex::Regex;
 use tauri::{
-  CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu, WindowBuilder, WindowUrl,
+  scope, CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu, WindowBuilder, WindowUrl,
 };
 
 mod cmd;
@@ -42,7 +44,6 @@ fn main() {
       let win = win
         .title("Mr Tagger")
         .resizable(true)
-        .transparent(false)
         .decorations(true)
         .always_on_top(false)
         .inner_size(800.0, 550.0)
@@ -120,11 +121,12 @@ fn main() {
       event.window().emit("menu", event_name).unwrap();
       match event_name {
         "Learn More" => {
-          shell::open(
-            "https://github.com/probablykasper/mr-tagger".to_string(),
-            None,
-          )
-          .unwrap();
+          let shell_scope = scope::ShellScope::new(scope::ShellScopeConfig {
+            open: Some(Regex::new("^https?://").unwrap()),
+            scopes: HashMap::new(),
+          });
+          let link = "https://github.com/probablykasper/mr-tagger".to_string();
+          shell::open(&shell_scope, link, None).unwrap();
         }
         _ => {}
       }
@@ -132,7 +134,7 @@ fn main() {
     .build(ctx)
     .expect("error while running tauri app");
   tauri_app.run(|app_handle, e| match e {
-    tauri::Event::CloseRequested { label, api, .. } => {
+    tauri::RunEvent::CloseRequested { label, api, .. } => {
       if label == "main" {
         let app: AppArg<'_> = app_handle.state();
         let app = app.0.lock().unwrap();
