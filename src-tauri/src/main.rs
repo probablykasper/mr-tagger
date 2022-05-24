@@ -7,7 +7,8 @@ use crate::cmd::AppArg;
 use std::thread;
 use tauri::api::{dialog, shell};
 use tauri::{
-  CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu, WindowBuilder, WindowUrl,
+  AboutMetadata, AppHandle, CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu,
+  WindowBuilder, WindowUrl,
 };
 
 mod cmd;
@@ -24,7 +25,7 @@ macro_rules! throw {
 
 fn main() {
   let ctx = tauri::generate_context!();
-  let tauri_app = tauri::Builder::default()
+  let app = tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       cmd::error_popup,
       cmd::get_app,
@@ -38,8 +39,8 @@ fn main() {
       image::remove_image,
       image::set_image,
     ])
-    .create_window("main", WindowUrl::default(), |win, webview| {
-      let win = win
+    .setup(|app| {
+      let _ = WindowBuilder::new(app, "main", WindowUrl::default())
         .title("Mr Tagger")
         .resizable(true)
         .decorations(true)
@@ -47,8 +48,9 @@ fn main() {
         .inner_size(800.0, 550.0)
         .min_inner_size(400.0, 200.0)
         .skip_taskbar(false)
-        .fullscreen(false);
-      return (win, webview);
+        .build()
+        .expect("Unable to create window");
+      Ok(())
     })
     .manage(cmd::AppState(Default::default()))
     .menu(Menu::with_items([
@@ -56,7 +58,7 @@ fn main() {
       MenuEntry::Submenu(Submenu::new(
         &ctx.package_info().name,
         Menu::with_items([
-          MenuItem::About(ctx.package_info().name.clone()).into(),
+          MenuItem::About(ctx.package_info().name.clone(), AboutMetadata::default()).into(),
           MenuItem::Separator.into(),
           MenuItem::Services.into(),
           MenuItem::Separator.into(),
@@ -127,34 +129,44 @@ fn main() {
     })
     .build(ctx)
     .expect("error while running tauri app");
-  tauri_app.run(|app_handle, e| match e {
-    tauri::RunEvent::CloseRequested { label, api, .. } => {
-      if label == "main" {
-        let app: AppArg<'_> = app_handle.state();
-        let app = app.0.lock().unwrap();
-        for file in &app.files {
-          if file.dirty {
-            api.prevent_close();
-            let app_handle = app_handle.clone();
-            thread::spawn(move || {
-              let w = app_handle.get_window("main").unwrap();
-              dialog::ask(
-                Some(&w),
-                "You have unsaved changes. Close without saving?",
-                "",
-                move |res| {
-                  let w = app_handle.get_window("main").unwrap();
-                  if res == true {
-                    w.close().unwrap();
-                  }
-                },
-              );
-            });
-            break;
-          }
+  app.run(|_app_handle, e| match e {
+    tauri::RunEvent::WindowEvent { label, event, .. } => match event {
+      tauri::WindowEvent::CloseRequested { api, .. } => {
+        if label == "main" && is_dirty(&_app_handle) {
+          api.prevent_close();
+          handle_close_requested(_app_handle.clone())
         }
       }
-    }
+      _ => {}
+    },
     _ => {}
-  })
+  });
+}
+
+fn is_dirty(app: &AppHandle) -> bool {
+  let app: AppArg<'_> = app.state();
+  let app = app.0.lock().unwrap();
+  for file in &app.files {
+    if file.dirty {
+      return true;
+    }
+  }
+  false
+}
+
+fn handle_close_requested(app_handle: AppHandle) {
+  thread::spawn(move || {
+    let w = app_handle.get_window("main").unwrap();
+    dialog::ask(
+      Some(&w),
+      "You have unsaved changes. Close without saving?",
+      "",
+      move |res| {
+        let w = app_handle.get_window("main").unwrap();
+        if res == true {
+          w.close().unwrap();
+        }
+      },
+    );
+  });
 }
