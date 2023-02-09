@@ -13,6 +13,7 @@ Supported file formats:
 - aiff
 - mp3
 - m4a / mp4 / m4p / m4b / m4r / m4v
+- opus
 - wav
 
 ![Screenshot](assets/screenshot.png)
@@ -25,6 +26,9 @@ Supported file formats:
 2. Install Rust
 3. Follow the [Tauri setup guide](https://tauri.studio/en/docs/getting-started/intro)
 4. Run `npm install`
+
+### Useful resources
+- https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html
 
 ### Commands
 - `npm run dev`: Start app in dev mode

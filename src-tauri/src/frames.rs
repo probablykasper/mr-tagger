@@ -1,11 +1,21 @@
+use lofty::ogg::VorbisComments;
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Metadata {
   Id3(id3::Tag),
   Mp4(mp4ameta::Tag),
+  VorbisComments(lofty::ogg::VorbisComments),
 }
-use Metadata::{Id3, Mp4};
+impl Metadata {
+  pub fn get_frames(&self) -> Vec<Frame> {
+    match self {
+      Self::Id3(id3) => get_id3_frames(id3),
+      Self::Mp4(mp4) => get_mp4_frames(mp4),
+      Self::VorbisComments(vorbis_comments) => get_vorbis_comments_frames(vorbis_comments),
+    }
+  }
+}
 
 #[derive(Serialize)]
 pub enum Frame {
@@ -80,9 +90,13 @@ fn get_mp4_frames(tag: &mp4ameta::Tag) -> Vec<Frame> {
   frames
 }
 
-pub fn get_frames(md: &Metadata) -> Vec<Frame> {
-  match md {
-    Id3(id3) => get_id3_frames(id3),
-    Mp4(mp4) => get_mp4_frames(mp4),
+fn get_vorbis_comments_frames(tag: &VorbisComments) -> Vec<Frame> {
+  let mut frames = Vec::new();
+  for (key, value) in tag.items() {
+    frames.push(Frame::Text {
+      id: key.to_string(),
+      value: value.to_string(),
+    });
   }
+  frames
 }

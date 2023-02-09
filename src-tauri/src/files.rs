@@ -1,15 +1,24 @@
 use crate::cmd::{AppArg, File};
 use crate::frames::Metadata;
 use crate::throw;
+use lofty::{AudioFile, TagExt};
 use std::fs;
 use std::path::PathBuf;
 use tauri::api::dialog;
 use tauri::command;
 
+fn open_file(path: &PathBuf) -> Result<fs::File, String> {
+  match fs::File::open(&path) {
+    Ok(f) => Ok(f),
+    Err(e) => throw!("Error opening file {}: {}", path.to_string_lossy(), e),
+  }
+}
+
 fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
   let ext = path.extension().unwrap_or_default().to_string_lossy();
   let path_str = path.to_string_lossy();
   let metadata = match ext.as_ref() {
+    // ID3
     "mp3" | "aiff" => {
       let tag = match id3::Tag::read_from_path(&path) {
         Ok(tag) => tag,
@@ -20,6 +29,7 @@ fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
       };
       Metadata::Id3(tag)
     }
+    // iTunes-style
     "m4a" | "mp4" | "m4p" | "m4b" | "m4r" | "m4v" => {
       let tag = match mp4ameta::Tag::read_from_path(&path) {
         Ok(tag) => tag,
@@ -29,6 +39,17 @@ fn get_metadata(path: &PathBuf) -> Result<Metadata, String> {
         },
       };
       Metadata::Mp4(tag)
+    }
+    "opus" => {
+      let mut file = open_file(&path)?;
+      let mut opus = match lofty::ogg::OpusFile::read_from(
+        &mut file,
+        lofty::ParseOptions::new().read_properties(false),
+      ) {
+        Ok(f) => f,
+        Err(e) => throw!("Error reading tag for file {}: {}", path_str, e),
+      };
+      Metadata::VorbisComments(opus.remove_vorbis_comments())
     }
     _ => throw!("Unsupported file type"),
   };
@@ -97,6 +118,10 @@ pub async fn save_file(index: usize, save_as: bool, app: AppArg<'_>) -> Result<(
     Metadata::Mp4(ref tag) => match tag.write_to_path(&file.path) {
       Ok(_) => {}
       Err(e) => throw!("Error saving file: {}", e.description),
+    },
+    Metadata::VorbisComments(ref tag) => match tag.save_to_path(&file.path) {
+      Ok(_) => {}
+      Err(e) => throw!("Error saving file: {}", e.to_string()),
     },
   }
   file.dirty = false;

@@ -1,6 +1,7 @@
-use crate::frames::{get_frames, Metadata};
+use crate::frames::Metadata;
 use crate::throw;
 use id3::TagLike;
+use lofty::Accessor;
 use serde::Serialize;
 use serde_json::Value;
 use std::path::PathBuf;
@@ -9,7 +10,7 @@ use std::thread;
 use tauri::api::dialog;
 use tauri::{command, State};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct File {
   pub path: PathBuf,
   pub dirty: bool,
@@ -17,7 +18,7 @@ pub struct File {
   pub metadata: Metadata,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Default, Serialize)]
 pub struct App {
   pub current_index: usize,
   pub files: Vec<File>,
@@ -89,28 +90,33 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
   let file = app.current_file().ok()?;
 
   let title = match file.metadata {
-    Metadata::Id3(ref tag) => tag.title().unwrap_or(""),
-    Metadata::Mp4(ref tag) => tag.title().unwrap_or(""),
+    Metadata::Id3(ref tag) => tag.title().unwrap_or("").to_string(),
+    Metadata::Mp4(ref tag) => tag.title().unwrap_or("").to_string(),
+    Metadata::VorbisComments(ref tag) => tag.title().map(|s| s.to_string()).unwrap_or_default(),
   };
 
   let artists: Vec<_> = match file.metadata {
     Metadata::Id3(ref tag) => id3_split(tag.artist()),
     Metadata::Mp4(ref tag) => tag.artists().collect(),
+    Metadata::VorbisComments(ref tag) => tag.get_all("ARTIST").collect(),
   };
 
   let album = match file.metadata {
-    Metadata::Id3(ref tag) => tag.album().unwrap_or(""),
-    Metadata::Mp4(ref tag) => tag.album().unwrap_or(""),
+    Metadata::Id3(ref tag) => tag.album().unwrap_or("").to_string(),
+    Metadata::Mp4(ref tag) => tag.album().unwrap_or("").to_string(),
+    Metadata::VorbisComments(ref tag) => tag.album().map(|s| s.to_string()).unwrap_or_default(),
   };
 
   let album_artists: Vec<_> = match file.metadata {
     Metadata::Id3(ref tag) => id3_split(tag.album_artist()),
     Metadata::Mp4(ref tag) => tag.album_artists().collect(),
+    Metadata::VorbisComments(ref tag) => tag.get_all("ALBUMARTIST").collect(),
   };
 
   let composer = match file.metadata {
     Metadata::Id3(ref tag) => id3_split(get_frame_text(&tag, "TCOM")),
     Metadata::Mp4(ref tag) => tag.composers().collect(),
+    Metadata::VorbisComments(ref tag) => tag.get_all("COMPOSER").collect(),
   };
 
   let groupings = match file.metadata {
@@ -120,29 +126,35 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
       None => get_frame_text(&tag, "GP1"),
     }),
     Metadata::Mp4(ref tag) => tag.groupings().collect(),
+    Metadata::VorbisComments(ref tag) => tag.get_all("GROUPING").collect(),
   };
 
   let genres = match file.metadata {
     Metadata::Id3(ref tag) => id3_split(tag.genre()),
     Metadata::Mp4(ref tag) => tag.genres().collect(),
+    Metadata::VorbisComments(ref tag) => tag.get_all("GENRE").collect(),
   };
 
   let track_num = match file.metadata {
     Metadata::Id3(ref tag) => opt_to_str(tag.track()),
     Metadata::Mp4(ref tag) => opt_to_str(tag.track().0),
+    Metadata::VorbisComments(ref tag) => opt_to_str(tag.track()),
   };
   let track_total = match file.metadata {
     Metadata::Id3(ref tag) => opt_to_str(tag.total_tracks()),
     Metadata::Mp4(ref tag) => opt_to_str(tag.track().1),
+    Metadata::VorbisComments(ref tag) => opt_to_str(tag.track_total()),
   };
 
   let disc_num = match file.metadata {
     Metadata::Id3(ref tag) => opt_to_str(tag.disc()),
     Metadata::Mp4(ref tag) => opt_to_str(tag.disc().0),
+    Metadata::VorbisComments(ref tag) => opt_to_str(tag.disk()),
   };
   let disc_total = match file.metadata {
     Metadata::Id3(ref tag) => opt_to_str(tag.total_discs()),
     Metadata::Mp4(ref tag) => opt_to_str(tag.disc().1),
+    Metadata::VorbisComments(ref tag) => opt_to_str(tag.disk_total()),
   };
 
   let compilation = match file.metadata {
@@ -151,11 +163,13 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
       get_frame_text(&tag, "TCMP") == Some("1") || get_frame_text(&tag, "TCP") == Some("1")
     }
     Metadata::Mp4(ref tag) => tag.compilation(),
+    Metadata::VorbisComments(ref tag) => tag.get("COMPILATION") == Some("1"),
   };
 
   let bpm = match file.metadata {
     Metadata::Id3(ref tag) => get_frame_text(&tag, "TBPM").unwrap_or("").to_string(),
     Metadata::Mp4(ref tag) => opt_to_str(tag.bpm()),
+    Metadata::VorbisComments(ref tag) => tag.get("BPM").unwrap_or("").to_string(),
   };
 
   #[derive(Serialize)]
@@ -181,6 +195,14 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
         description: None,
       })
       .collect(),
+    Metadata::VorbisComments(ref tag) => tag
+      .get_all("COMMENT")
+      .map(|c| Comment {
+        text: c.to_string(),
+        lang: None,
+        description: None,
+      })
+      .collect(),
   };
 
   Some(serde_json::json!({
@@ -200,6 +222,6 @@ pub fn get_page(app: AppArg<'_>) -> Option<Value> {
     "compilation": compilation,
     "bpm": bpm,
     "comments": comments,
-    "frames": get_frames(&file.metadata),
+    "frames": file.metadata.get_frames(),
   }))
 }

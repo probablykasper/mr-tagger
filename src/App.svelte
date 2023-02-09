@@ -37,7 +37,19 @@
     await runCmd<App>('open_files', { paths })
     getApp()
   }
-  let extensions = ['mp3', 'aiff', 'wav', 'm4a', 'mp4', 'm4p', 'm4b', 'm4r', 'm4v']
+  let extensions = [
+    //
+    'aiff',
+    'mp3',
+    'm4a',
+    'mp4',
+    'm4p',
+    'm4b',
+    'm4r',
+    'm4v',
+    'opus',
+    'wav',
+  ]
   async function openDialog() {
     let paths = await dialog.open({
       filters: [{ name: 'Audio/Video file', extensions }],

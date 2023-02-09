@@ -1,5 +1,8 @@
 # Changelog
 
+## Next
+- Add Opus support
+
 ## 0.1.6 - 2021 Dec 14
 - Fix BPM not showing
 
