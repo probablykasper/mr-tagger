@@ -120,8 +120,10 @@
     <div class="topbar">
       <button on:click={openDialog}>Open Files</button>
     </div>
+    <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
     <div class="files" tabindex="0" on:keydown={filesKeydown}>
       {#each app.files as file, i}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="file" class:selected={i === app.current_index} on:click={() => show(i)}>
           <div class="icon dirty">
             {#if file.dirty}
@@ -130,6 +132,7 @@
               </svg>
             {/if}
           </div>
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
           <div class="icon x" on:click|stopPropagation={() => close(i)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
               ><path
