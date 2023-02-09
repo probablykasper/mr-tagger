@@ -1,16 +1,16 @@
 <script lang="ts">
-  export let value: string[] = []
+	export let value: string[] = []
 </script>
 
 <div class="content">
-  {#if value.length === 1}
-    {value[0]}
-  {:else}
-    <!-- {#each ['Omri', 'Aero Chord'] as artist} -->
-    {#each value as item}
-      <span class="item">{item}</span>
-    {/each}
-  {/if}
+	{#if value.length === 1}
+		{value[0]}
+	{:else}
+		<!-- {#each ['Omri', 'Aero Chord'] as artist} -->
+		{#each value as item}
+			<span class="item">{item}</span>
+		{/each}
+	{/if}
 </div>
 
 <style lang="sass">
