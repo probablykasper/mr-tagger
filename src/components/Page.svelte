@@ -69,7 +69,11 @@
 				multiple: false,
 				directory: false,
 			})
-			if (typeof pathResult === 'string') path = pathResult
+			if (typeof pathResult === 'string') {
+				path = pathResult
+			} else {
+				return
+			}
 		}
 		if (image) {
 			await runCmd('set_image', { index: image.index, path })
