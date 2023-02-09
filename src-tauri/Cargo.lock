@@ -1420,7 +1420,7 @@ checksum = "07dcca13d1740c0a665f77104803360da0bdb3323ecce2e93fa2c959a6d52806"
 
 [[package]]
 name = "mr-tagger"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "backtrace",
  "base64 0.20.0",
