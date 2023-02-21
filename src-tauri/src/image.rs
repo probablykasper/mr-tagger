@@ -1,7 +1,7 @@
 use crate::cmd::AppArg;
 use crate::frames::Metadata;
 use crate::throw;
-use base64;
+use base64::{self, Engine};
 use id3::TagLike;
 use lofty::ogg::OggPictureStorage;
 use serde::Serialize;
@@ -56,7 +56,7 @@ pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Result<Option<Image>,
 			Some(pic) => Some(Image {
 				index,
 				total_images: tag.pictures().count(),
-				data: base64::encode(&pic.data),
+				data: base64::engine::general_purpose::STANDARD.encode(&pic.data),
 				mime_type: pic.mime_type.clone(),
 				description: Some(pic.description.clone()),
 				picture_type: Some(pic.picture_type.to_string()),
@@ -67,7 +67,7 @@ pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Result<Option<Image>,
 			Some(artwork) => Some(Image {
 				index,
 				total_images: tag.artworks().count(),
-				data: base64::encode(&artwork.data),
+				data: base64::engine::general_purpose::STANDARD.encode(&artwork.data),
 				mime_type: match artwork.fmt {
 					mp4ameta::ImgFmt::Bmp => "image/bmp".to_string(),
 					mp4ameta::ImgFmt::Jpeg => "image/jpeg".to_string(),
@@ -82,7 +82,7 @@ pub fn get_image(index: Option<usize>, app: AppArg<'_>) -> Result<Option<Image>,
 			Some((pic, _info)) => Some(Image {
 				index,
 				total_images: tag.pictures().len(),
-				data: base64::encode(pic.data()),
+				data: base64::engine::general_purpose::STANDARD.encode(pic.data()),
 				mime_type: match pic.mime_type() {
 					lofty::MimeType::Png => "image/png".to_string(),
 					lofty::MimeType::Jpeg => "image/jpeg".to_string(),
