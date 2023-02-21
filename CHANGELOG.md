@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.2.1 - 2023 Feb 21
 - Expose devtools
 - Fix app freeze
 
