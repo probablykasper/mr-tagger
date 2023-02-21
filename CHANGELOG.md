@@ -2,6 +2,7 @@
 
 ## Next
 - Expose devtools
+- Fix app freeze
 
 ## 0.2.0 - 2023 Feb 9
 - Add Opus support

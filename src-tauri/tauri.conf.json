@@ -55,7 +55,7 @@
 			}
 		},
 		"security": {
-			"csp": "default-src 'self'; img-src *"
+			"csp": "default-src 'self'; img-src *; style-src 'unsafe-inline' *"
 		}
 	}
 }
