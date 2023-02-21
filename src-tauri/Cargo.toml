@@ -13,10 +13,10 @@ tauri-build = { version = "1.0", features = [] }
 serde_json = "1.0"
 backtrace = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.0", features = ["dialog-open", "dialog-save", "shell-open"] }
+tauri = { version = "1.0", features = ["devtools", "dialog-open", "dialog-save", "shell-open"] }
 id3 = "1.2"
 mp4ameta = "0.11"
-base64 = "0.20"
+base64 = "0.21"
 lofty = "0.11.0"
 
 [features]

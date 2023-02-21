@@ -1,5 +1,8 @@
 # Changelog
 
+## Next
+- Expose devtools
+
 ## 0.2.0 - 2023 Feb 9
 - Add Opus support
 - Fix error when cancelling image file dialog
