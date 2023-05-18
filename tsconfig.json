@@ -1,25 +1,14 @@
 {
+  "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
-
-    // require `import type` instead fo `import` for types
-    // svelte-preprocess apparently needs this
-    "importsNotUsedAsValues": "error",
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
     "isolatedModules": true,
-
-    // To have svelte warnings/errors correct position
-    "sourceMap": true,
-
-    // Prevent type errors
-    "types": ["svelte"],
-
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": "."
+    "strict": true
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+  "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
 }
