@@ -14,7 +14,6 @@ Supported file formats:
 - mp3
 - m4a / mp4 / m4p / m4b / m4r / m4v
 - opus
-- wav
 
 ![Screenshot](assets/screenshot.png)
 
